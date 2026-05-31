@@ -1,0 +1,432 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ── App shell ───────────────────────────────────────────────────────────── */
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: 56px 1fr;
+}
+
+.topbar {
+  background: var(--black);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar-brand {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  color: var(--white);
+  letter-spacing: -0.5px;
+}
+
+.topbar-brand span {
+  color: var(--red);
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.topbar-user {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  color: #888;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.topbar-logout {
+  background: none;
+  border: 1px solid #333;
+  color: #888;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+.topbar-logout:hover { border-color: var(--red); color: var(--red); }
+
+.page-content {
+  padding: 2.5rem 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Page header ─────────────────────────────────────────────────────────── */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1.5px solid var(--black);
+}
+
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+}
+
+.page-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--gray-400);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.3rem;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.4rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-primary:hover { background: var(--red); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--black);
+  border: 1.5px solid var(--gray-200);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.65rem 1.2rem;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-ghost:hover { border-color: var(--black); }
+
+/* ── Estado badge ────────────────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border: 1.5px solid currentColor;
+}
+.badge-pendiente   { color: var(--gray-600); border-color: var(--gray-400); }
+.badge-en_atencion { color: #b07800; border-color: #b07800; }
+.badge-aprobada    { color: #1a7a1a; border-color: #1a7a1a; }
+.badge-rechazada   { color: var(--red); border-color: var(--red); }
+.badge-escalada    { color: #5500cc; border-color: #5500cc; }
+.badge-resuelta    { color: var(--black); border-color: var(--black); }
+
+/* ── Solicitudes table ───────────────────────────────────────────────────── */
+.solicitudes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.solicitudes-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  text-align: left;
+  padding: 0.6rem 1rem;
+  border-bottom: 1.5px solid var(--black);
+  font-weight: 500;
+}
+
+.solicitudes-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  vertical-align: middle;
+}
+
+.solicitudes-table tr:hover td {
+  background: var(--gray-100);
+}
+
+.ticket-code {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--black);
+}
+
+.table-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gray-400);
+}
+
+.table-link {
+  color: var(--black);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.table-link:hover { color: var(--red); }
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  border: 1.5px dashed var(--gray-200);
+}
+.empty-state-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+}
+.empty-state-sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--gray-400);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Nueva solicitud ─────────────────────────────────────────────────────── */
+.tramite-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.tramite-card {
+  border: 1.5px solid var(--gray-200);
+  padding: 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--white);
+}
+.tramite-card:hover { border-color: var(--black); }
+.tramite-card.selected { border-color: var(--black); background: var(--black); color: var(--white); }
+
+.tramite-card-name {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+.tramite-card-desc {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  color: var(--gray-400);
+  line-height: 1.5;
+}
+.tramite-card.selected .tramite-card-desc { color: #ccc; }
+
+.form-field {
+  margin-bottom: 1.25rem;
+}
+.form-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  margin-bottom: 0.4rem;
+}
+.form-input, .form-textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--black);
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: 0;
+}
+.form-input:focus, .form-textarea:focus { border-color: var(--black); }
+.form-textarea { resize: vertical; min-height: 90px; }
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+.doc-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-100);
+}
+.doc-item-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--black);
+}
+.doc-item-ok {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: #1a7a1a;
+  letter-spacing: 0.1em;
+}
+.doc-upload-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  border: 1.5px dashed var(--gray-200);
+  padding: 0.65rem 1rem;
+  transition: border-color 0.2s, color 0.2s;
+  width: 100%;
+  justify-content: center;
+}
+.doc-upload-label:hover { border-color: var(--black); color: var(--black); }
+input[type="file"] { display: none; }
+
+.btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+
+/* ── Detalle solicitud ───────────────────────────────────────────────────── */
+.solicitud-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 2rem;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+.detail-section-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.detail-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+}
+.detail-meta-key {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+
+.historial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.historial-item {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+.historial-date {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--gray-400);
+  line-height: 1.5;
+}
+.historial-body {}
+.historial-estados {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
+}
+.historial-arrow { color: var(--gray-400); margin: 0 0.35rem; }
+.historial-comment {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--gray-600);
+}
+
+.ticket-hero {
+  background: var(--black);
+  color: var(--white);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.ticket-hero-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+.ticket-hero-code {
+  font-family: 'DM Mono', monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.05em;
+}
+
+.global-error {
+  background: #fff5f5;
+  border-left: 3px solid var(--red);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--red);
+}
+.loading-msg {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--gray-400);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3rem;
+  text-align: center;
+}

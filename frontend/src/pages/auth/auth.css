@@ -1,0 +1,289 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.auth-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+}
+
+.auth-brand {
+  background: var(--black);
+  color: var(--white);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 3rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.auth-brand-top {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.auth-brand-rule {
+  width: 40px;
+  height: 3px;
+  background: var(--red);
+}
+
+.auth-brand-wordmark {
+  font-family: 'DM Serif Display', serif;
+  font-size: 4.5rem;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.auth-brand-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #888;
+  line-height: 1.7;
+}
+
+.auth-brand-footer {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.6rem;
+  color: #444;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── Form panel ──────────────────────────────────────────────────────────── */
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  background: var(--white);
+}
+
+.auth-form-box {
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-form-heading {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  letter-spacing: -0.5px;
+  margin-bottom: 0.35rem;
+  color: var(--black);
+}
+
+.auth-form-subheading {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--gray-400);
+  margin-bottom: 2.5rem;
+}
+
+/* ── Steps indicator ─────────────────────────────────────────────────────── */
+.auth-steps {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 2.5rem;
+}
+
+.auth-step-dot {
+  height: 3px;
+  flex: 1;
+  background: var(--gray-200);
+  transition: background 0.3s;
+}
+
+.auth-step-dot.active {
+  background: var(--black);
+}
+
+.auth-step-dot.done {
+  background: var(--red);
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────────── */
+.auth-field {
+  margin-bottom: 1.25rem;
+}
+
+.auth-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.auth-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-600);
+  margin-bottom: 0.4rem;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  color: var(--black);
+  outline: none;
+  transition: border-color 0.2s;
+  border-radius: 0;
+  -webkit-appearance: none;
+}
+
+.auth-input:focus {
+  border-color: var(--black);
+}
+
+.auth-input.error {
+  border-color: var(--red);
+}
+
+.auth-input-error {
+  margin-top: 0.3rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--red);
+  letter-spacing: 0.05em;
+}
+
+select.auth-input {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%230a0a0a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  padding-right: 2.2rem;
+  appearance: none;
+}
+
+/* ── Button ──────────────────────────────────────────────────────────────── */
+.auth-btn {
+  width: 100%;
+  padding: 0.85rem;
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-top: 0.75rem;
+}
+
+.auth-btn:hover {
+  background: var(--red);
+}
+
+.auth-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.auth-btn-ghost {
+  width: 100%;
+  padding: 0.75rem;
+  background: transparent;
+  color: var(--gray-600);
+  border: 1.5px solid var(--gray-200);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  margin-top: 0.5rem;
+}
+
+.auth-btn-ghost:hover {
+  border-color: var(--black);
+  color: var(--black);
+}
+
+/* ── Links / misc ────────────────────────────────────────────────────────── */
+.auth-links {
+  margin-top: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.auth-link {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--gray-400);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: color 0.2s;
+}
+
+.auth-link:hover {
+  color: var(--black);
+}
+
+.auth-link-accent {
+  color: var(--red);
+}
+
+.auth-global-error {
+  background: #fff5f5;
+  border-left: 3px solid var(--red);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--red);
+}
+
+.auth-success-msg {
+  background: var(--gray-100);
+  border-left: 3px solid var(--black);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: var(--black);
+}
+
+.auth-divider {
+  border: none;
+  border-top: 1px solid var(--gray-200);
+  margin: 1.5rem 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .auth-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-brand {
+    position: static;
+    height: auto;
+    padding: 2rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .auth-brand-top { flex-direction: row; align-items: center; gap: 1rem; }
+  .auth-brand-wordmark { font-size: 2.2rem; }
+  .auth-brand-sub, .auth-brand-footer { display: none; }
+  .auth-brand-rule { width: 0; height: 0; }
+
+  .auth-form-panel { padding: 2rem 1.25rem; }
+}

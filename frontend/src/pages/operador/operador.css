@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+/* Reutiliza las variables globales de index.css */
+
+/* ── Filtros ─────────────────────────────────────────────────────────────── */
+.filtros-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.filtro-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.filtro-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+
+.filtro-select, .filtro-input {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--gray-200);
+  background: var(--white);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--black);
+  outline: none;
+  border-radius: 0;
+  cursor: pointer;
+  min-width: 140px;
+}
+.filtro-select:focus, .filtro-input:focus { border-color: var(--black); }
+
+/* ── Bandeja table ───────────────────────────────────────────────────────── */
+.bandeja-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.bandeja-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  text-align: left;
+  padding: 0.6rem 1rem;
+  border-bottom: 1.5px solid var(--black);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.bandeja-table td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--gray-200);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.87rem;
+  vertical-align: middle;
+}
+.bandeja-table tr { cursor: pointer; }
+.bandeja-table tr:hover td { background: var(--gray-100); }
+
+.tiempo-transcurrido {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--gray-400);
+}
+.tiempo-urgente { color: var(--red); }
+
+/* ── Detalle operador ────────────────────────────────────────────────────── */
+.operador-detail-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.acciones-panel {
+  position: sticky;
+  top: 72px;
+  border: 1.5px solid var(--black);
+  padding: 1.5rem;
+}
+
+.acciones-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gray-400);
+  margin-bottom: 1.25rem;
+}
+
+.accion-btn {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border: none;
+  margin-bottom: 0.5rem;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.accion-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.accion-aprobar { background: var(--black); color: var(--white); }
+.accion-aprobar:hover:not(:disabled) { background: #1a7a1a; }
+
+.accion-rechazar { background: var(--red); color: var(--white); }
+.accion-rechazar:hover:not(:disabled) { background: var(--red-dark); }
+
+.accion-escalar { background: transparent; color: var(--black); border: 1.5px solid var(--black); }
+.accion-escalar:hover:not(:disabled) { background: var(--gray-100); }
+
+.accion-interno { background: transparent; color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+.accion-interno:hover:not(:disabled) { border-color: var(--black); color: var(--black); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+.modal-box {
+  background: var(--white);
+  padding: 2rem;
+  width: 100%;
+  max-width: 460px;
+  border-top: 3px solid var(--red);
+}
+.modal-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  margin-bottom: 1rem;
+}
+.modal-textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1.5px solid var(--gray-200);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  resize: vertical;
+  min-height: 90px;
+  outline: none;
+  border-radius: 0;
+  margin-bottom: 1rem;
+}
+.modal-textarea:focus { border-color: var(--black); }
+.modal-btn-row { display: flex; gap: 0.5rem; }
+.modal-confirm { flex: 1; padding: 0.75rem; background: var(--red); color: var(--white); border: none; font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
+.modal-confirm:hover { background: var(--red-dark); }
+.modal-cancel { flex: 1; padding: 0.75rem; background: transparent; color: var(--black); border: 1.5px solid var(--gray-200); font-family: 'DM Mono', monospace; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
+.modal-cancel:hover { border-color: var(--black); }
+
+.interno-badge {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.4rem;
+  background: var(--black);
+  color: var(--white);
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+@media (max-width: 860px) {
+  .operador-detail-layout { grid-template-columns: 1fr; }
+  .acciones-panel { position: static; }
+}
