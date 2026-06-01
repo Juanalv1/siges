@@ -95,6 +95,10 @@ def register(body: RegisterBody, db: Session = Depends(get_db)):
     if len(body.security_questions) != 2:
         raise HTTPException(status_code=400, detail="Exactly 2 security questions are required")
 
+    question_ids = [item.question_id for item in body.security_questions]
+    if len(set(question_ids)) != len(question_ids):
+        raise HTTPException(status_code=400, detail="Security questions must be different")
+
     user = Usuario(
         national_id=body.national_id,
         first_name=body.first_name,
@@ -132,7 +136,7 @@ def login(body: LoginBody, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
     token = create_access_token(
-        {"sub": user.id, "role": user.role, "name": user.first_name, "scope": "access"},
+        {"sub": str(user.id), "role": user.role, "name": user.first_name, "scope": "access"},
         timedelta(minutes=480),
     )
     return {"access_token": token, "token_type": "bearer"}
@@ -168,7 +172,7 @@ def recover_verify(body: RecoverVerifyBody, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="Incorrect answers")
 
     token = create_access_token(
-        {"sub": user.id, "scope": "recovery"},
+        {"sub": str(user.id), "scope": "recovery"},
         timedelta(minutes=15),
     )
     return {"recovery_token": token}
@@ -193,7 +197,7 @@ def change_password(
     if payload.get("scope") != "recovery":
         raise HTTPException(status_code=401, detail="Token is not a recovery token")
 
-    user = db.query(Usuario).filter(Usuario.id == payload.get("sub")).first()
+    user = db.query(Usuario).filter(Usuario.id == int(payload.get("sub"))).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 

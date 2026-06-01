@@ -8,7 +8,8 @@ from app.config import settings
 from app.database import Base, engine
 from app.routers import auth, coordinador, operador, solicitudes
 
-Base.metadata.create_all(bind=engine)
+if not os.getenv("SIGES_TESTING"):
+    Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SiGES", description="Sistema de Gestión de Solicitudes Estudiantiles", version="1.0.0")
 

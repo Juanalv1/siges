@@ -25,7 +25,7 @@ def get_current_user(
     token = credentials.credentials
     try:
         payload = decode_token(token)
-        user_id: int = payload.get("sub")
+        user_id: int = int(payload.get("sub"))
         scope: str = payload.get("scope", "access")
         if user_id is None or scope != "access":
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
