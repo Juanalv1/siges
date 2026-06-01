@@ -8,12 +8,12 @@ from app.database import Base
 
 
 class EstadoEnum(str, enum.Enum):
-    pendiente = "pendiente"
-    en_atencion = "en_atencion"
-    aprobada = "aprobada"
-    rechazada = "rechazada"
-    escalada = "escalada"
-    resuelta = "resuelta"
+    pending = "pending"
+    in_progress = "in_progress"
+    approved = "approved"
+    rejected = "rejected"
+    escalated = "escalated"
+    resolved = "resolved"
 
 
 class Solicitud(Base):
@@ -21,34 +21,34 @@ class Solicitud(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     ticket = Column(String, unique=True, index=True, nullable=False)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
-    cedula_solicitante = Column(String, nullable=True)
-    tipo_tramite_id = Column(Integer, ForeignKey("tipos_tramite.id"), nullable=False)
-    estado = Column(Enum(EstadoEnum), default=EstadoEnum.pendiente, nullable=False)
-    operador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
-    descripcion = Column(String, nullable=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    applicant_national_id = Column(String, nullable=True)
+    request_type_id = Column(Integer, ForeignKey("tipos_tramite.id"), nullable=False)
+    status = Column(Enum(EstadoEnum), default=EstadoEnum.pending, nullable=False)
+    operator_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    description = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    usuario = relationship("Usuario", foreign_keys=[usuario_id], back_populates="solicitudes")
-    operador = relationship("Usuario", foreign_keys=[operador_id])
-    tipo_tramite = relationship("TipoTramite", back_populates="solicitudes")
-    historial = relationship("HistorialEstado", back_populates="solicitud", order_by="HistorialEstado.fecha")
-    documentos = relationship("Documento", back_populates="solicitud")
-    notificaciones = relationship("Notificacion", back_populates="solicitud")
+    user = relationship("Usuario", foreign_keys=[user_id], back_populates="requests")
+    operator = relationship("Usuario", foreign_keys=[operator_id])
+    request_type = relationship("TipoTramite", back_populates="requests")
+    history = relationship("HistorialEstado", back_populates="request", order_by="HistorialEstado.date")
+    documents = relationship("Documento", back_populates="request")
+    notifications = relationship("Notificacion", back_populates="request")
 
 
 class HistorialEstado(Base):
     __tablename__ = "historial_estados"
 
     id = Column(Integer, primary_key=True, index=True)
-    solicitud_id = Column(Integer, ForeignKey("solicitudes.id"), nullable=False)
-    operador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
-    estado_anterior = Column(String, nullable=True)
-    estado_nuevo = Column(String, nullable=False)
-    comentario = Column(String, nullable=True)
-    es_interno = Column(Boolean, default=False, nullable=False)
-    fecha = Column(DateTime, default=datetime.utcnow, nullable=False)
+    request_id = Column(Integer, ForeignKey("solicitudes.id"), nullable=False)
+    operator_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    previous_status = Column(String, nullable=True)
+    new_status = Column(String, nullable=False)
+    comment = Column(String, nullable=True)
+    is_internal = Column(Boolean, default=False, nullable=False)
+    date = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    solicitud = relationship("Solicitud", back_populates="historial")
-    operador = relationship("Usuario", foreign_keys=[operador_id])
+    request = relationship("Solicitud", back_populates="history")
+    operator = relationship("Usuario", foreign_keys=[operator_id])

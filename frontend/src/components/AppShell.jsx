@@ -16,9 +16,9 @@ export default function AppShell({ children }) {
         <span className="topbar-brand">Si<span>GES</span></span>
         <div className="topbar-right">
           {user && (
-            <span className="topbar-user">{user.nombre} · {user.rol}</span>
+            <span className="topbar-user">{user.name} · {user.role}</span>
           )}
-          <button className="topbar-logout" onClick={handleLogout}>Salir</button>
+          <button className="topbar-logout" onClick={handleLogout}>Sign out</button>
         </div>
       </header>
       <div className="page-content">

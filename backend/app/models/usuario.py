@@ -8,47 +8,47 @@ from app.database import Base
 
 
 class RolEnum(str, enum.Enum):
-    estudiante = "estudiante"
-    operador = "operador"
-    coordinador = "coordinador"
+    student = "student"
+    operator = "operator"
+    coordinator = "coordinator"
 
 
 class Usuario(Base):
     __tablename__ = "usuarios"
 
     id = Column(Integer, primary_key=True, index=True)
-    cedula = Column(String, unique=True, index=True, nullable=False)
-    nombre = Column(String, nullable=False)
-    apellido = Column(String, nullable=False)
-    correo = Column(String, unique=True, index=True, nullable=False)
-    telefono = Column(String, nullable=True)
+    national_id = Column(String, unique=True, index=True, nullable=False)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String, nullable=True)
     password_hash = Column(String, nullable=False)
-    rol = Column(Enum(RolEnum), default=RolEnum.estudiante, nullable=False)
-    activo = Column(Boolean, default=True, nullable=False)
+    role = Column(Enum(RolEnum), default=RolEnum.student, nullable=False)
+    active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    respuestas_seguridad = relationship("RespuestaSeguridad", back_populates="usuario")
-    solicitudes = relationship("Solicitud", foreign_keys="Solicitud.usuario_id", back_populates="usuario")
-    notificaciones = relationship("Notificacion", back_populates="usuario")
-    documentos = relationship("Documento", back_populates="usuario")
+    security_answers = relationship("RespuestaSeguridad", back_populates="user")
+    requests = relationship("Solicitud", foreign_keys="Solicitud.user_id", back_populates="user")
+    notifications = relationship("Notificacion", back_populates="user")
+    documents = relationship("Documento", back_populates="user")
 
 
 class PreguntaSeguridad(Base):
     __tablename__ = "preguntas_seguridad"
 
     id = Column(Integer, primary_key=True, index=True)
-    pregunta = Column(String, nullable=False)
+    question = Column(String, nullable=False)
 
-    respuestas = relationship("RespuestaSeguridad", back_populates="pregunta")
+    answers = relationship("RespuestaSeguridad", back_populates="question_obj")
 
 
 class RespuestaSeguridad(Base):
     __tablename__ = "respuestas_seguridad"
 
     id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    pregunta_id = Column(Integer, ForeignKey("preguntas_seguridad.id"), nullable=False)
-    respuesta_hash = Column(String, nullable=False)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    question_id = Column(Integer, ForeignKey("preguntas_seguridad.id"), nullable=False)
+    answer_hash = Column(String, nullable=False)
 
-    usuario = relationship("Usuario", back_populates="respuestas_seguridad")
-    pregunta = relationship("PreguntaSeguridad", back_populates="respuestas")
+    user = relationship("Usuario", back_populates="security_answers")
+    question_obj = relationship("PreguntaSeguridad", back_populates="answers")

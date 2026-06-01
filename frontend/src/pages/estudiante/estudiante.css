@@ -25,9 +25,7 @@
   letter-spacing: -0.5px;
 }
 
-.topbar-brand span {
-  color: var(--red);
-}
+.topbar-brand span { color: var(--red); }
 
 .topbar-right {
   display: flex;
@@ -126,7 +124,7 @@
 }
 .btn-ghost:hover { border-color: var(--black); }
 
-/* ── Estado badge ────────────────────────────────────────────────────────── */
+/* ── Status badge ────────────────────────────────────────────────────────── */
 .badge {
   display: inline-block;
   font-family: 'DM Mono', monospace;
@@ -136,14 +134,14 @@
   padding: 0.2rem 0.55rem;
   border: 1.5px solid currentColor;
 }
-.badge-pendiente   { color: var(--gray-600); border-color: var(--gray-400); }
-.badge-en_atencion { color: #b07800; border-color: #b07800; }
-.badge-aprobada    { color: #1a7a1a; border-color: #1a7a1a; }
-.badge-rechazada   { color: var(--red); border-color: var(--red); }
-.badge-escalada    { color: #5500cc; border-color: #5500cc; }
-.badge-resuelta    { color: var(--black); border-color: var(--black); }
+.badge-pending     { color: var(--gray-600); border-color: var(--gray-400); }
+.badge-in_progress { color: #b07800; border-color: #b07800; }
+.badge-approved    { color: #1a7a1a; border-color: #1a7a1a; }
+.badge-rejected    { color: var(--red); border-color: var(--red); }
+.badge-escalated   { color: #5500cc; border-color: #5500cc; }
+.badge-resolved    { color: var(--black); border-color: var(--black); }
 
-/* ── Solicitudes table ───────────────────────────────────────────────────── */
+/* ── Requests table ──────────────────────────────────────────────────────── */
 .solicitudes-table {
   width: 100%;
   border-collapse: collapse;
@@ -169,9 +167,7 @@
   vertical-align: middle;
 }
 
-.solicitudes-table tr:hover td {
-  background: var(--gray-100);
-}
+.solicitudes-table tr:hover td { background: var(--gray-100); }
 
 .ticket-code {
   font-family: 'DM Mono', monospace;
@@ -216,7 +212,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* ── Nueva solicitud ─────────────────────────────────────────────────────── */
+/* ── New request ─────────────────────────────────────────────────────────── */
 .tramite-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -247,9 +243,7 @@
 }
 .tramite-card.selected .tramite-card-desc { color: #ccc; }
 
-.form-field {
-  margin-bottom: 1.25rem;
-}
+.form-field { margin-bottom: 1.25rem; }
 .form-label {
   display: block;
   font-family: 'DM Mono', monospace;
@@ -320,16 +314,14 @@ input[type="file"] { display: none; }
 
 .btn-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
 
-/* ── Detalle solicitud ───────────────────────────────────────────────────── */
+/* ── Request detail ──────────────────────────────────────────────────────── */
 .solicitud-detail-grid {
   display: grid;
   grid-template-columns: 1fr 320px;
   gap: 2rem;
 }
 
-.detail-section {
-  margin-bottom: 2rem;
-}
+.detail-section { margin-bottom: 2rem; }
 .detail-section-title {
   font-family: 'DM Mono', monospace;
   font-size: 0.6rem;
@@ -361,11 +353,7 @@ input[type="file"] { display: none; }
   color: var(--gray-400);
 }
 
-.historial-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
+.historial-list { display: flex; flex-direction: column; gap: 0; }
 .historial-item {
   display: grid;
   grid-template-columns: 130px 1fr;
@@ -379,7 +367,6 @@ input[type="file"] { display: none; }
   color: var(--gray-400);
   line-height: 1.5;
 }
-.historial-body {}
 .historial-estados {
   font-family: 'DM Mono', monospace;
   font-size: 0.72rem;

@@ -14,209 +14,208 @@ from app.models.documento import Documento
 from app.models.solicitud import EstadoEnum, HistorialEstado, Solicitud
 from app.models.tramite import TipoTramite
 from app.models.usuario import RolEnum, Usuario
-from app.services.sogac import verificar_estudiante
+from app.services.sogac import verify_student
 
-router = APIRouter(tags=["solicitudes"])
+router = APIRouter(tags=["requests"])
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def generar_ticket() -> str:
+def generate_ticket() -> str:
     now = datetime.utcnow()
     suffix = ''.join(random.choices(string.digits, k=5))
     return f"SIG-{now.year}{now.month:02d}-{suffix}"
 
 
-def _solicitud_response(s: Solicitud, include_internal: bool = False):
+def _request_response(req: Solicitud, include_internal: bool = False):
     return {
-        "id": s.id,
-        "ticket": s.ticket,
-        "tipo_tramite": {"id": s.tipo_tramite.id, "nombre": s.tipo_tramite.nombre},
-        "estado": s.estado,
-        "descripcion": s.descripcion,
-        "cedula_solicitante": s.cedula_solicitante,
-        "created_at": s.created_at.isoformat(),
-        "updated_at": s.updated_at.isoformat(),
-        "historial": [
+        "id": req.id,
+        "ticket": req.ticket,
+        "request_type": {"id": req.request_type.id, "name": req.request_type.name},
+        "status": req.status,
+        "description": req.description,
+        "applicant_national_id": req.applicant_national_id,
+        "created_at": req.created_at.isoformat(),
+        "updated_at": req.updated_at.isoformat(),
+        "history": [
             {
-                "estado_anterior": h.estado_anterior,
-                "estado_nuevo": h.estado_nuevo,
-                "comentario": h.comentario,
-                "fecha": h.fecha.isoformat(),
-                "es_interno": h.es_interno,
+                "previous_status": h.previous_status,
+                "new_status": h.new_status,
+                "comment": h.comment,
+                "date": h.date.isoformat(),
+                "is_internal": h.is_internal,
             }
-            for h in s.historial
-            if include_internal or not h.es_interno
+            for h in req.history
+            if include_internal or not h.is_internal
         ],
-        "documentos": [
-            {"id": d.id, "nombre_archivo": d.nombre_archivo, "url": f"/uploads/{os.path.basename(d.ruta)}"}
-            for d in s.documentos
+        "documents": [
+            {"id": d.id, "filename": d.filename, "url": f"/uploads/{os.path.basename(d.path)}"}
+            for d in req.documents
         ],
     }
 
 
-# ── Tipos de trámite ──────────────────────────────────────────────────────────
+# ── Request types ─────────────────────────────────────────────────────────────
 
-@router.get("/tipos-tramite")
-def get_tipos_tramite(db: Session = Depends(get_db)):
-    tipos = db.query(TipoTramite).filter(TipoTramite.activo == True).all()
+@router.get("/request-types")
+def get_request_types(db: Session = Depends(get_db)):
+    types = db.query(TipoTramite).filter(TipoTramite.active == True).all()
     return [
         {
             "id": t.id,
-            "nombre": t.nombre,
-            "descripcion": t.descripcion,
-            "docs_requeridos": t.docs_requeridos,
-            "dias_limite": t.dias_limite,
-            "requiere_cuenta": t.requiere_cuenta,
+            "name": t.name,
+            "description": t.description,
+            "required_docs": t.required_docs,
+            "deadline_days": t.deadline_days,
+            "requires_account": t.requires_account,
         }
-        for t in tipos
+        for t in types
     ]
 
 
-# ── Documentos ────────────────────────────────────────────────────────────────
+# ── Documents ─────────────────────────────────────────────────────────────────
 
-@router.post("/documentos/subir")
-async def subir_documento(
+@router.post("/documents/upload")
+async def upload_document(
     archivo: UploadFile = File(...),
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     os.makedirs(settings.uploads_dir, exist_ok=True)
-    ext = os.path.splitext(archivo.filename)[1]
-    nombre_unico = f"{datetime.utcnow().timestamp()}_{current_user.id}_{archivo.filename}"
-    ruta = os.path.join(settings.uploads_dir, nombre_unico)
-    with open(ruta, "wb") as f:
+    unique_name = f"{datetime.utcnow().timestamp()}_{current_user.id}_{archivo.filename}"
+    file_path = os.path.join(settings.uploads_dir, unique_name)
+    with open(file_path, "wb") as f:
         shutil.copyfileobj(archivo.file, f)
 
     doc = Documento(
-        usuario_id=current_user.id,
-        nombre_archivo=archivo.filename,
-        ruta=ruta,
-        tipo_mime=archivo.content_type,
+        user_id=current_user.id,
+        filename=archivo.filename,
+        path=file_path,
+        mime_type=archivo.content_type,
     )
     db.add(doc)
     db.commit()
     db.refresh(doc)
-    return {"id": doc.id, "nombre_archivo": doc.nombre_archivo}
+    return {"id": doc.id, "filename": doc.filename}
 
 
-# ── Solicitudes autenticadas ──────────────────────────────────────────────────
+# ── Authenticated requests ────────────────────────────────────────────────────
 
-class CrearSolicitudBody(BaseModel):
-    tipo_tramite_id: int
-    descripcion: str | None = None
-    documento_ids: list[int] = []
+class CreateRequestBody(BaseModel):
+    request_type_id: int
+    description: str | None = None
+    document_ids: list[int] = []
 
 
-@router.post("/solicitudes", status_code=status.HTTP_201_CREATED)
-def crear_solicitud(
-    body: CrearSolicitudBody,
-    current_user: Usuario = Depends(require_roles(RolEnum.estudiante)),
+@router.post("/requests", status_code=status.HTTP_201_CREATED)
+def create_request(
+    body: CreateRequestBody,
+    current_user: Usuario = Depends(require_roles(RolEnum.student)),
     db: Session = Depends(get_db),
 ):
-    tipo = db.query(TipoTramite).filter(TipoTramite.id == body.tipo_tramite_id, TipoTramite.activo == True).first()
-    if not tipo:
-        raise HTTPException(status_code=404, detail="Tipo de trámite no encontrado")
-    if not tipo.requiere_cuenta:
-        raise HTTPException(status_code=400, detail="Este trámite no requiere cuenta")
+    req_type = db.query(TipoTramite).filter(TipoTramite.id == body.request_type_id, TipoTramite.active == True).first()
+    if not req_type:
+        raise HTTPException(status_code=404, detail="Request type not found")
+    if not req_type.requires_account:
+        raise HTTPException(status_code=400, detail="This request type does not require an account")
 
-    ticket = generar_ticket()
-    solicitud = Solicitud(
+    ticket = generate_ticket()
+    req = Solicitud(
         ticket=ticket,
-        usuario_id=current_user.id,
-        tipo_tramite_id=tipo.id,
-        estado=EstadoEnum.pendiente,
-        descripcion=body.descripcion,
+        user_id=current_user.id,
+        request_type_id=req_type.id,
+        status=EstadoEnum.pending,
+        description=body.description,
     )
-    db.add(solicitud)
+    db.add(req)
     db.flush()
 
-    for doc_id in body.documento_ids:
-        doc = db.query(Documento).filter(Documento.id == doc_id, Documento.usuario_id == current_user.id).first()
+    for doc_id in body.document_ids:
+        doc = db.query(Documento).filter(Documento.id == doc_id, Documento.user_id == current_user.id).first()
         if doc:
-            doc.solicitud_id = solicitud.id
+            doc.request_id = req.id
 
     db.add(HistorialEstado(
-        solicitud_id=solicitud.id,
-        estado_anterior=None,
-        estado_nuevo=EstadoEnum.pendiente,
-        comentario="Solicitud creada",
+        request_id=req.id,
+        previous_status=None,
+        new_status=EstadoEnum.pending,
+        comment="Request created",
     ))
     db.commit()
-    db.refresh(solicitud)
-    return {"ticket": solicitud.ticket, "id": solicitud.id, "estado": solicitud.estado}
+    db.refresh(req)
+    return {"ticket": req.ticket, "id": req.id, "status": req.status}
 
 
-@router.get("/solicitudes/mis-solicitudes")
-def mis_solicitudes(
-    current_user: Usuario = Depends(require_roles(RolEnum.estudiante)),
+@router.get("/requests/my-requests")
+def my_requests(
+    current_user: Usuario = Depends(require_roles(RolEnum.student)),
     db: Session = Depends(get_db),
 ):
-    solicitudes = db.query(Solicitud).filter(Solicitud.usuario_id == current_user.id).order_by(Solicitud.created_at.desc()).all()
-    return [_solicitud_response(s) for s in solicitudes]
+    reqs = db.query(Solicitud).filter(Solicitud.user_id == current_user.id).order_by(Solicitud.created_at.desc()).all()
+    return [_request_response(r) for r in reqs]
 
 
-@router.get("/solicitudes/{ticket}")
-def ver_solicitud(
+@router.get("/requests/{ticket}")
+def get_request(
     ticket: str,
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    s = db.query(Solicitud).filter(Solicitud.ticket == ticket).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    req = db.query(Solicitud).filter(Solicitud.ticket == ticket).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
 
-    is_staff = current_user.rol in (RolEnum.operador, RolEnum.coordinador)
-    if not is_staff and s.usuario_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Sin acceso a esta solicitud")
+    is_staff = current_user.role in (RolEnum.operator, RolEnum.coordinator)
+    if not is_staff and req.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Access denied")
 
-    return _solicitud_response(s, include_internal=is_staff)
+    return _request_response(req, include_internal=is_staff)
 
 
-# ── Inscripción sin cuenta ────────────────────────────────────────────────────
+# ── Enrollment without account ────────────────────────────────────────────────
 
-@router.post("/solicitudes/inscripcion", status_code=status.HTTP_201_CREATED)
-async def crear_inscripcion(
-    cedula: str = Form(...),
+@router.post("/requests/enrollment", status_code=status.HTTP_201_CREATED)
+async def create_enrollment(
+    national_id: str = Form(...),
     archivos: list[UploadFile] = File(...),
     db: Session = Depends(get_db),
 ):
-    if not verificar_estudiante(cedula):
-        raise HTTPException(status_code=400, detail="Cédula no encontrada en el sistema")
+    if not verify_student(national_id):
+        raise HTTPException(status_code=400, detail="National ID not found in the system")
 
-    tipo = db.query(TipoTramite).filter(TipoTramite.requiere_cuenta == False, TipoTramite.activo == True).first()
-    if not tipo:
-        raise HTTPException(status_code=404, detail="Tipo de trámite de inscripción no configurado")
+    req_type = db.query(TipoTramite).filter(TipoTramite.requires_account == False, TipoTramite.active == True).first()
+    if not req_type:
+        raise HTTPException(status_code=404, detail="Enrollment request type not configured")
 
-    ticket = generar_ticket()
-    solicitud = Solicitud(
+    ticket = generate_ticket()
+    req = Solicitud(
         ticket=ticket,
-        usuario_id=None,
-        cedula_solicitante=cedula,
-        tipo_tramite_id=tipo.id,
-        estado=EstadoEnum.pendiente,
+        user_id=None,
+        applicant_national_id=national_id,
+        request_type_id=req_type.id,
+        status=EstadoEnum.pending,
     )
-    db.add(solicitud)
+    db.add(req)
     db.flush()
 
     os.makedirs(settings.uploads_dir, exist_ok=True)
     for archivo in archivos:
-        nombre_unico = f"{datetime.utcnow().timestamp()}_{cedula}_{archivo.filename}"
-        ruta = os.path.join(settings.uploads_dir, nombre_unico)
-        with open(ruta, "wb") as f:
+        unique_name = f"{datetime.utcnow().timestamp()}_{national_id}_{archivo.filename}"
+        file_path = os.path.join(settings.uploads_dir, unique_name)
+        with open(file_path, "wb") as f:
             shutil.copyfileobj(archivo.file, f)
         db.add(Documento(
-            solicitud_id=solicitud.id,
-            nombre_archivo=archivo.filename,
-            ruta=ruta,
-            tipo_mime=archivo.content_type,
+            request_id=req.id,
+            filename=archivo.filename,
+            path=file_path,
+            mime_type=archivo.content_type,
         ))
 
     db.add(HistorialEstado(
-        solicitud_id=solicitud.id,
-        estado_anterior=None,
-        estado_nuevo=EstadoEnum.pendiente,
-        comentario="Inscripción enviada",
+        request_id=req.id,
+        previous_status=None,
+        new_status=EstadoEnum.pending,
+        comment="Enrollment submitted",
     ))
     db.commit()
-    return {"ticket": solicitud.ticket}
+    return {"ticket": req.ticket}

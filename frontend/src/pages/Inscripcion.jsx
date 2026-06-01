@@ -3,11 +3,11 @@ import client from '../api/client'
 import '../pages/auth/auth.css'
 import AuthShell from './auth/AuthShell'
 
-const DOCS_REQUERIDOS = ['Notas certificadas', 'Título de bachiller', 'Copia de cédula']
+const REQUIRED_DOCS = ['Certified grades', 'High school diploma', 'ID copy']
 
 export default function Inscripcion() {
-  const [cedula, setCedula] = useState('')
-  const [archivos, setArchivos] = useState({})
+  const [nationalId, setNationalId] = useState('')
+  const [files, setFiles] = useState({})
   const [ticket, setTicket] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -15,20 +15,20 @@ export default function Inscripcion() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    if (!cedula.trim()) { setError('Ingresa tu cédula'); return }
-    if (DOCS_REQUERIDOS.some(d => !archivos[d])) {
-      setError('Debes subir los 3 documentos requeridos')
+    if (!nationalId.trim()) { setError('Enter your national ID'); return }
+    if (REQUIRED_DOCS.some(d => !files[d])) {
+      setError('You must upload all 3 required documents')
       return
     }
     setLoading(true)
     try {
       const fd = new FormData()
-      fd.append('cedula', cedula)
-      DOCS_REQUERIDOS.forEach(d => fd.append('archivos', archivos[d]))
-      const { data } = await client.post('/solicitudes/inscripcion', fd)
+      fd.append('national_id', nationalId)
+      REQUIRED_DOCS.forEach(d => fd.append('archivos', files[d]))
+      const { data } = await client.post('/requests/enrollment', fd)
       setTicket(data.ticket)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al enviar solicitud')
+      setError(err.response?.data?.detail || 'Failed to submit request')
     } finally {
       setLoading(false)
     }
@@ -37,14 +37,14 @@ export default function Inscripcion() {
   if (ticket) {
     return (
       <AuthShell>
-        <h1 className="auth-form-heading">Solicitud enviada</h1>
-        <p className="auth-form-subheading">Tu solicitud de inscripción fue recibida.</p>
+        <h1 className="auth-form-heading">Request submitted</h1>
+        <p className="auth-form-subheading">Your enrollment request was received.</p>
         <div className="auth-success-msg">
           <strong>Ticket:</strong> {ticket}<br />
-          Recibirás una notificación cuando tu solicitud sea atendida por la taquilla.
+          You will receive a notification once your request is processed by the office.
         </div>
         <a href="/login" className="auth-btn" style={{ display: 'block', textAlign: 'center' }}>
-          Ir al inicio de sesión →
+          Go to sign in →
         </a>
       </AuthShell>
     )
@@ -52,35 +52,35 @@ export default function Inscripcion() {
 
   return (
     <AuthShell>
-      <h1 className="auth-form-heading">Inscripción</h1>
-      <p className="auth-form-subheading">Envía tu solicitud sin necesidad de cuenta.</p>
+      <h1 className="auth-form-heading">Enrollment</h1>
+      <p className="auth-form-subheading">Submit your request without an account.</p>
 
       {error && <div className="auth-global-error">{error}</div>}
 
       <form onSubmit={handleSubmit}>
         <div className="auth-field">
-          <label className="auth-label">Número de cédula</label>
+          <label className="auth-label">National ID</label>
           <input
             className="auth-input"
             type="text"
             placeholder="V-00000000"
-            value={cedula}
-            onChange={e => setCedula(e.target.value)}
+            value={nationalId}
+            onChange={e => setNationalId(e.target.value)}
           />
         </div>
 
         <div className="auth-field">
           <label className="auth-label" style={{ marginBottom: '0.75rem', display: 'block' }}>
-            Documentos requeridos
+            Required documents
           </label>
-          {DOCS_REQUERIDOS.map(doc => (
+          {REQUIRED_DOCS.map(doc => (
             <div key={doc} style={{ marginBottom: '0.6rem' }}>
-              {archivos[doc] ? (
+              {files[doc] ? (
                 <div style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '0.6rem 0.9rem', background: 'var(--gray-100)', border: '1px solid var(--gray-200)'
                 }}>
-                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem' }}>{archivos[doc].name}</span>
+                  <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.72rem' }}>{files[doc].name}</span>
                   <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.6rem', color: '#1a7a1a' }}>✓ {doc}</span>
                 </div>
               ) : (
@@ -94,7 +94,7 @@ export default function Inscripcion() {
                   <input
                     type="file"
                     style={{ display: 'none' }}
-                    onChange={e => e.target.files[0] && setArchivos(a => ({ ...a, [doc]: e.target.files[0] }))}
+                    onChange={e => e.target.files[0] && setFiles(f => ({ ...f, [doc]: e.target.files[0] }))}
                   />
                 </label>
               )}
@@ -103,12 +103,12 @@ export default function Inscripcion() {
         </div>
 
         <button className="auth-btn" type="submit" disabled={loading}>
-          {loading ? 'Enviando...' : 'Enviar solicitud →'}
+          {loading ? 'Submitting...' : 'Submit request →'}
         </button>
       </form>
 
       <div className="auth-links">
-        <a href="/login" className="auth-link">← Ya tengo cuenta</a>
+        <a href="/login" className="auth-link">← Already have an account</a>
       </div>
     </AuthShell>
   )

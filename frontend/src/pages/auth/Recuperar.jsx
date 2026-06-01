@@ -1,4 +1,5 @@
 import { useState } from 'react'
+<parameter name="content">import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import client from '../../api/client'
 import AuthShell from './AuthShell'
@@ -6,162 +7,162 @@ import AuthShell from './AuthShell'
 export default function Recuperar() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
-  const [cedula, setCedula] = useState('')
-  const [preguntas, setPreguntas] = useState([])
-  const [respuestas, setRespuestas] = useState([])
+  const [nationalId, setNationalId] = useState('')
+  const [questions, setQuestions] = useState([])
+  const [answers, setAnswers] = useState([])
   const [recoveryToken, setRecoveryToken] = useState('')
-  const [nuevaPassword, setNuevaPassword] = useState('')
-  const [confirmar, setConfirmar] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
-  async function handleCedula(e) {
+  async function handleNationalId(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
     try {
-      const { data } = await client.post('/auth/recuperar/iniciar', { cedula })
-      setPreguntas(data.preguntas)
-      setRespuestas(data.preguntas.map(p => ({ pregunta_id: p.pregunta_id, respuesta: '' })))
+      const { data } = await client.post('/auth/recover/start', { national_id: nationalId })
+      setQuestions(data.questions)
+      setAnswers(data.questions.map(q => ({ question_id: q.question_id, answer: '' })))
       setStep(2)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Cédula no encontrada')
+      setError(err.response?.data?.detail || 'National ID not found')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleRespuestas(e) {
+  async function handleAnswers(e) {
     e.preventDefault()
     setError('')
-    if (respuestas.some(r => !r.respuesta.trim())) {
-      setError('Responde ambas preguntas')
+    if (answers.some(a => !a.answer.trim())) {
+      setError('Answer both questions')
       return
     }
     setLoading(true)
     try {
-      const { data } = await client.post('/auth/recuperar/verificar', { cedula, respuestas })
+      const { data } = await client.post('/auth/recover/verify', {
+        national_id: nationalId,
+        answers,
+      })
       setRecoveryToken(data.recovery_token)
       setStep(3)
     } catch (err) {
-      setError(err.response?.data?.detail || 'Respuestas incorrectas')
+      setError(err.response?.data?.detail || 'Incorrect answers')
     } finally {
       setLoading(false)
     }
   }
 
-  async function handleNuevaPassword(e) {
+  async function handleNewPassword(e) {
     e.preventDefault()
     setError('')
-    if (nuevaPassword.length < 8) { setError('Mínimo 8 caracteres'); return }
-    if (nuevaPassword !== confirmar) { setError('Las contraseñas no coinciden'); return }
+    if (newPassword.length < 8) { setError('Minimum 8 characters'); return }
+    if (newPassword !== confirm) { setError('Passwords do not match'); return }
     setLoading(true)
     try {
       await client.post(
-        '/auth/recuperar/cambiar-password',
-        { nueva_password: nuevaPassword },
+        '/auth/recover/change-password',
+        { new_password: newPassword },
         { headers: { Authorization: `Bearer ${recoveryToken}` } }
       )
-      navigate('/login', { state: { success: 'Contraseña actualizada. Ingresa con tu nueva contraseña.' } })
+      navigate('/login', { state: { success: 'Password updated. Sign in with your new password.' } })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al actualizar contraseña')
+      setError(err.response?.data?.detail || 'Failed to update password')
     } finally {
       setLoading(false)
     }
   }
 
-  const STEP_LABELS = ['Identidad', 'Verificación', 'Nueva clave']
+  const STEP_LABELS = ['Identity', 'Verification', 'New password']
 
   return (
     <AuthShell>
-      <h1 className="auth-form-heading">Recuperar acceso</h1>
+      <h1 className="auth-form-heading">Recover access</h1>
       <p className="auth-form-subheading">{STEP_LABELS[step - 1]}</p>
 
       <div className="auth-steps">
         {[1, 2, 3].map(s => (
-          <div
-            key={s}
-            className={`auth-step-dot ${s < step ? 'done' : s === step ? 'active' : ''}`}
-          />
+          <div key={s} className={`auth-step-dot ${s < step ? 'done' : s === step ? 'active' : ''}`} />
         ))}
       </div>
 
       {error && <div className="auth-global-error">{error}</div>}
 
       {step === 1 && (
-        <form onSubmit={handleCedula}>
+        <form onSubmit={handleNationalId}>
           <div className="auth-field">
-            <label className="auth-label">Número de cédula</label>
+            <label className="auth-label">National ID</label>
             <input
               className="auth-input"
               type="text"
               placeholder="V-00000000"
-              value={cedula}
-              onChange={e => setCedula(e.target.value)}
+              value={nationalId}
+              onChange={e => setNationalId(e.target.value)}
               required
             />
           </div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Buscando...' : 'Continuar →'}
+            {loading ? 'Searching...' : 'Continue →'}
           </button>
           <Link className="auth-link" to="/login" style={{ marginTop: '1rem', display: 'block' }}>
-            ← Volver al inicio de sesión
+            ← Back to sign in
           </Link>
         </form>
       )}
 
       {step === 2 && (
-        <form onSubmit={handleRespuestas}>
-          {preguntas.map((p, i) => (
-            <div className="auth-field" key={p.pregunta_id}>
-              <label className="auth-label">{p.pregunta}</label>
+        <form onSubmit={handleAnswers}>
+          {questions.map((q, i) => (
+            <div className="auth-field" key={q.question_id}>
+              <label className="auth-label">{q.question}</label>
               <input
                 className="auth-input"
                 type="text"
-                value={respuestas[i]?.respuesta || ''}
+                value={answers[i]?.answer || ''}
                 onChange={e => {
-                  const copy = [...respuestas]
-                  copy[i] = { ...copy[i], respuesta: e.target.value }
-                  setRespuestas(copy)
+                  const copy = [...answers]
+                  copy[i] = { ...copy[i], answer: e.target.value }
+                  setAnswers(copy)
                 }}
               />
             </div>
           ))}
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Verificando...' : 'Verificar →'}
+            {loading ? 'Verifying...' : 'Verify →'}
           </button>
           <button type="button" className="auth-btn-ghost" onClick={() => { setStep(1); setError('') }}>
-            ← Volver
+            ← Back
           </button>
         </form>
       )}
 
       {step === 3 && (
-        <form onSubmit={handleNuevaPassword}>
+        <form onSubmit={handleNewPassword}>
           <div className="auth-field">
-            <label className="auth-label">Nueva contraseña</label>
+            <label className="auth-label">New password</label>
             <input
               className="auth-input"
               type="password"
               placeholder="••••••••"
-              value={nuevaPassword}
-              onChange={e => setNuevaPassword(e.target.value)}
+              value={newPassword}
+              onChange={e => setNewPassword(e.target.value)}
               required
             />
           </div>
           <div className="auth-field">
-            <label className="auth-label">Confirmar contraseña</label>
+            <label className="auth-label">Confirm password</label>
             <input
               className="auth-input"
               type="password"
               placeholder="••••••••"
-              value={confirmar}
-              onChange={e => setConfirmar(e.target.value)}
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
               required
             />
           </div>
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Guardando...' : 'Guardar contraseña →'}
+            {loading ? 'Saving...' : 'Save password →'}
           </button>
         </form>
       )}

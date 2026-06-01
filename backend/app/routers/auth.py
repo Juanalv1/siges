@@ -2,24 +2,24 @@ from datetime import timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from jose import JWTError
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.dependencies import get_db
 from app.models.usuario import PreguntaSeguridad, RespuestaSeguridad, RolEnum, Usuario
-from app.services.sogac import verificar_estudiante
+from app.services.sogac import verify_student
 from app.utils.security import (
     create_access_token,
     decode_token,
+    hash_answer,
     hash_password,
-    hash_respuesta,
+    verify_answer,
     verify_password,
-    verify_respuesta,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-PREGUNTAS_SEED = [
+SECURITY_QUESTIONS_SEED = [
     "¿Nombre de tu primera mascota?",
     "¿Ciudad donde naciste?",
     "¿Nombre de tu escuela primaria?",
@@ -28,180 +28,175 @@ PREGUNTAS_SEED = [
 ]
 
 
-def seed_preguntas(db: Session):
+def seed_questions(db: Session):
     if db.query(PreguntaSeguridad).count() == 0:
-        for p in PREGUNTAS_SEED:
-            db.add(PreguntaSeguridad(pregunta=p))
+        for q in SECURITY_QUESTIONS_SEED:
+            db.add(PreguntaSeguridad(question=q))
         db.commit()
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
 
-class RespuestaItem(BaseModel):
-    pregunta_id: int
-    respuesta: str
+class SecurityQuestionItem(BaseModel):
+    question_id: int
+    answer: str
 
 
 class RegisterBody(BaseModel):
-    cedula: str
-    nombre: str
-    apellido: str
-    correo: str
-    telefono: str | None = None
+    national_id: str
+    first_name: str
+    last_name: str
+    email: str
+    phone: str | None = None
     password: str
-    preguntas: list[RespuestaItem]
+    security_questions: list[SecurityQuestionItem]
 
 
 class LoginBody(BaseModel):
-    correo: str
+    email: str
     password: str
 
 
-class RecuperarIniciarBody(BaseModel):
-    cedula: str
+class RecoverStartBody(BaseModel):
+    national_id: str
 
 
-class RecuperarVerificarBody(BaseModel):
-    cedula: str
-    respuestas: list[RespuestaItem]
+class RecoverVerifyBody(BaseModel):
+    national_id: str
+    answers: list[SecurityQuestionItem]
 
 
-class NuevaPasswordBody(BaseModel):
-    nueva_password: str
+class ChangePasswordBody(BaseModel):
+    new_password: str
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
-@router.get("/preguntas-seguridad")
-def get_preguntas(db: Session = Depends(get_db)):
-    seed_preguntas(db)
-    preguntas = db.query(PreguntaSeguridad).all()
-    return [{"id": p.id, "pregunta": p.pregunta} for p in preguntas]
+@router.get("/security-questions")
+def get_security_questions(db: Session = Depends(get_db)):
+    seed_questions(db)
+    questions = db.query(PreguntaSeguridad).all()
+    return [{"id": q.id, "question": q.question} for q in questions]
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(body: RegisterBody, db: Session = Depends(get_db)):
-    seed_preguntas(db)
+    seed_questions(db)
 
-    if not verificar_estudiante(body.cedula):
-        raise HTTPException(status_code=400, detail="Cédula no encontrada en el sistema")
+    if not verify_student(body.national_id):
+        raise HTTPException(status_code=400, detail="National ID not found in the system")
 
-    if db.query(Usuario).filter(Usuario.cedula == body.cedula).first():
-        raise HTTPException(status_code=400, detail="La cédula ya está registrada")
+    if db.query(Usuario).filter(Usuario.national_id == body.national_id).first():
+        raise HTTPException(status_code=400, detail="National ID already registered")
 
-    if db.query(Usuario).filter(Usuario.correo == body.correo).first():
-        raise HTTPException(status_code=400, detail="El correo ya está registrado")
+    if db.query(Usuario).filter(Usuario.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
 
-    if len(body.preguntas) != 2:
-        raise HTTPException(status_code=400, detail="Se requieren exactamente 2 preguntas de seguridad")
+    if len(body.security_questions) != 2:
+        raise HTTPException(status_code=400, detail="Exactly 2 security questions are required")
 
-    usuario = Usuario(
-        cedula=body.cedula,
-        nombre=body.nombre,
-        apellido=body.apellido,
-        correo=body.correo,
-        telefono=body.telefono,
+    user = Usuario(
+        national_id=body.national_id,
+        first_name=body.first_name,
+        last_name=body.last_name,
+        email=body.email,
+        phone=body.phone,
         password_hash=hash_password(body.password),
-        rol=RolEnum.estudiante,
-        activo=True,
+        role=RolEnum.student,
+        active=True,
     )
-    db.add(usuario)
+    db.add(user)
     db.flush()
 
-    for item in body.preguntas:
-        pregunta = db.query(PreguntaSeguridad).filter(PreguntaSeguridad.id == item.pregunta_id).first()
-        if not pregunta:
-            raise HTTPException(status_code=400, detail=f"Pregunta {item.pregunta_id} no existe")
+    for item in body.security_questions:
+        question = db.query(PreguntaSeguridad).filter(PreguntaSeguridad.id == item.question_id).first()
+        if not question:
+            raise HTTPException(status_code=400, detail=f"Question {item.question_id} does not exist")
         db.add(RespuestaSeguridad(
-            usuario_id=usuario.id,
-            pregunta_id=item.pregunta_id,
-            respuesta_hash=hash_respuesta(item.respuesta),
+            user_id=user.id,
+            question_id=item.question_id,
+            answer_hash=hash_answer(item.answer),
         ))
 
     db.commit()
-    db.refresh(usuario)
-    return {"id": usuario.id, "nombre": usuario.nombre, "correo": usuario.correo}
+    db.refresh(user)
+    return {"id": user.id, "first_name": user.first_name, "email": user.email}
 
 
 @router.post("/login")
 def login(body: LoginBody, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.correo == body.correo).first()
-    if not usuario or not verify_password(body.password, usuario.password_hash):
-        raise HTTPException(status_code=401, detail="Credenciales inválidas")
-    if not usuario.activo:
-        raise HTTPException(status_code=403, detail="Cuenta desactivada")
+    user = db.query(Usuario).filter(Usuario.email == body.email).first()
+    if not user or not verify_password(body.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    if not user.active:
+        raise HTTPException(status_code=403, detail="Account is deactivated")
 
     token = create_access_token(
-        {"sub": usuario.id, "rol": usuario.rol, "nombre": usuario.nombre, "scope": "access"},
+        {"sub": user.id, "role": user.role, "name": user.first_name, "scope": "access"},
         timedelta(minutes=480),
     )
     return {"access_token": token, "token_type": "bearer"}
 
 
-@router.post("/recuperar/iniciar")
-def recuperar_iniciar(body: RecuperarIniciarBody, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.cedula == body.cedula).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Cédula no encontrada")
+@router.post("/recover/start")
+def recover_start(body: RecoverStartBody, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.national_id == body.national_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="National ID not found")
 
-    respuestas = db.query(RespuestaSeguridad).filter(RespuestaSeguridad.usuario_id == usuario.id).all()
+    answers = db.query(RespuestaSeguridad).filter(RespuestaSeguridad.user_id == user.id).all()
     return {
-        "preguntas": [
-            {"pregunta_id": r.pregunta_id, "pregunta": r.pregunta.pregunta}
-            for r in respuestas
+        "questions": [
+            {"question_id": a.question_id, "question": a.question_obj.question}
+            for a in answers
         ]
     }
 
 
-@router.post("/recuperar/verificar")
-def recuperar_verificar(body: RecuperarVerificarBody, db: Session = Depends(get_db)):
-    usuario = db.query(Usuario).filter(Usuario.cedula == body.cedula).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Cédula no encontrada")
+@router.post("/recover/verify")
+def recover_verify(body: RecoverVerifyBody, db: Session = Depends(get_db)):
+    user = db.query(Usuario).filter(Usuario.national_id == body.national_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="National ID not found")
 
-    for item in body.respuestas:
-        rs = db.query(RespuestaSeguridad).filter(
-            RespuestaSeguridad.usuario_id == usuario.id,
-            RespuestaSeguridad.pregunta_id == item.pregunta_id,
+    for item in body.answers:
+        stored = db.query(RespuestaSeguridad).filter(
+            RespuestaSeguridad.user_id == user.id,
+            RespuestaSeguridad.question_id == item.question_id,
         ).first()
-        if not rs or not verify_respuesta(item.respuesta, rs.respuesta_hash):
-            raise HTTPException(status_code=400, detail="Respuestas incorrectas")
+        if not stored or not verify_answer(item.answer, stored.answer_hash):
+            raise HTTPException(status_code=400, detail="Incorrect answers")
 
     token = create_access_token(
-        {"sub": usuario.id, "scope": "recovery"},
+        {"sub": user.id, "scope": "recovery"},
         timedelta(minutes=15),
     )
     return {"recovery_token": token}
-
-
-@router.post("/recuperar/nueva-password")
-def nueva_password(body: NuevaPasswordBody, db: Session = Depends(get_db), token: str = Depends(lambda: None)):
-    from fastapi import Header
-    raise HTTPException(status_code=501, detail="Usar el endpoint con header Authorization")
 
 
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 _bearer = HTTPBearer()
 
-@router.post("/recuperar/cambiar-password")
-def cambiar_password(
-    body: NuevaPasswordBody,
+
+@router.post("/recover/change-password")
+def change_password(
+    body: ChangePasswordBody,
     credentials: HTTPAuthorizationCredentials = Depends(_bearer),
     db: Session = Depends(get_db),
 ):
     try:
         payload = decode_token(credentials.credentials)
     except JWTError:
-        raise HTTPException(status_code=401, detail="Token inválido o expirado")
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     if payload.get("scope") != "recovery":
-        raise HTTPException(status_code=401, detail="Token no es de recuperación")
+        raise HTTPException(status_code=401, detail="Token is not a recovery token")
 
-    usuario = db.query(Usuario).filter(Usuario.id == payload.get("sub")).first()
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    user = db.query(Usuario).filter(Usuario.id == payload.get("sub")).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    usuario.password_hash = hash_password(body.nueva_password)
+    user.password_hash = hash_password(body.new_password)
     db.commit()
-    return {"detail": "Contraseña actualizada correctamente"}
+    return {"detail": "Password updated successfully"}

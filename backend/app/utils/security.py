@@ -16,16 +16,16 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def normalize_respuesta(respuesta: str) -> str:
-    return respuesta.strip().lower()
+def normalize_answer(answer: str) -> str:
+    return answer.strip().lower()
 
 
-def hash_respuesta(respuesta: str) -> str:
-    return pwd_context.hash(normalize_respuesta(respuesta))
+def hash_answer(answer: str) -> str:
+    return pwd_context.hash(normalize_answer(answer))
 
 
-def verify_respuesta(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(normalize_respuesta(plain), hashed)
+def verify_answer(plain: str, hashed: str) -> bool:
+    return pwd_context.verify(normalize_answer(plain), hashed)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:

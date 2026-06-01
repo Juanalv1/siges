@@ -7,225 +7,230 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user, get_db, require_roles
 from app.models.solicitud import EstadoEnum, HistorialEstado, Solicitud
 from app.models.usuario import RolEnum, Usuario
-from app.services.notificaciones import crear_notificacion
+from app.services.notificaciones import create_notification
 
-router = APIRouter(prefix="/operador", tags=["operador"])
+router = APIRouter(prefix="/operator", tags=["operator"])
 
-STAFF_ROLES = (RolEnum.operador, RolEnum.coordinador)
+STAFF_ROLES = (RolEnum.operator, RolEnum.coordinator)
 
 
-def _solicitud_full(s: Solicitud):
+def _request_full(req: Solicitud):
     return {
-        "id": s.id,
-        "ticket": s.ticket,
-        "tipo_tramite": {"id": s.tipo_tramite.id, "nombre": s.tipo_tramite.nombre},
-        "estado": s.estado,
-        "descripcion": s.descripcion,
-        "cedula_solicitante": s.cedula_solicitante,
-        "usuario": (
-            {"id": s.usuario.id, "nombre": s.usuario.nombre, "apellido": s.usuario.apellido, "cedula": s.usuario.cedula}
-            if s.usuario else None
-        ),
-        "operador_id": s.operador_id,
-        "created_at": s.created_at.isoformat(),
-        "updated_at": s.updated_at.isoformat(),
-        "historial": [
+        "id": req.id,
+        "ticket": req.ticket,
+        "request_type": {"id": req.request_type.id, "name": req.request_type.name},
+        "status": req.status,
+        "description": req.description,
+        "applicant_national_id": req.applicant_national_id,
+        "user": (
             {
-                "estado_anterior": h.estado_anterior,
-                "estado_nuevo": h.estado_nuevo,
-                "comentario": h.comentario,
-                "es_interno": h.es_interno,
-                "fecha": h.fecha.isoformat(),
-                "operador": h.operador.nombre if h.operador else None,
+                "id": req.user.id,
+                "first_name": req.user.first_name,
+                "last_name": req.user.last_name,
+                "national_id": req.user.national_id,
             }
-            for h in s.historial
+            if req.user else None
+        ),
+        "operator_id": req.operator_id,
+        "created_at": req.created_at.isoformat(),
+        "updated_at": req.updated_at.isoformat(),
+        "history": [
+            {
+                "previous_status": h.previous_status,
+                "new_status": h.new_status,
+                "comment": h.comment,
+                "is_internal": h.is_internal,
+                "date": h.date.isoformat(),
+                "operator": h.operator.first_name if h.operator else None,
+            }
+            for h in req.history
         ],
-        "documentos": [
-            {"id": d.id, "nombre_archivo": d.nombre_archivo, "url": f"/uploads/{d.nombre_archivo}"}
-            for d in s.documentos
+        "documents": [
+            {"id": d.id, "filename": d.filename, "url": f"/uploads/{d.filename}"}
+            for d in req.documents
         ],
     }
 
 
-# ── Bandeja ───────────────────────────────────────────────────────────────────
+# ── Inbox ─────────────────────────────────────────────────────────────────────
 
-@router.get("/bandeja")
-def get_bandeja(
-    tipo_tramite_id: int | None = Query(None),
-    estado: str | None = Query(None),
-    fecha_desde: str | None = Query(None),
-    fecha_hasta: str | None = Query(None),
+@router.get("/inbox")
+def get_inbox(
+    request_type_id: int | None = Query(None),
+    status_filter: str | None = Query(None, alias="status"),
+    date_from: str | None = Query(None),
+    date_to: str | None = Query(None),
     current_user: Usuario = Depends(require_roles(*STAFF_ROLES)),
     db: Session = Depends(get_db),
 ):
     q = db.query(Solicitud).filter(
-        Solicitud.estado.in_([EstadoEnum.pendiente, EstadoEnum.en_atencion])
+        Solicitud.status.in_([EstadoEnum.pending, EstadoEnum.in_progress])
     )
-    if tipo_tramite_id:
-        q = q.filter(Solicitud.tipo_tramite_id == tipo_tramite_id)
-    if estado:
-        q = q.filter(Solicitud.estado == estado)
-    if fecha_desde:
-        q = q.filter(Solicitud.created_at >= datetime.fromisoformat(fecha_desde))
-    if fecha_hasta:
-        q = q.filter(Solicitud.created_at <= datetime.fromisoformat(fecha_hasta))
+    if request_type_id:
+        q = q.filter(Solicitud.request_type_id == request_type_id)
+    if status_filter:
+        q = q.filter(Solicitud.status == status_filter)
+    if date_from:
+        q = q.filter(Solicitud.created_at >= datetime.fromisoformat(date_from))
+    if date_to:
+        q = q.filter(Solicitud.created_at <= datetime.fromisoformat(date_to))
 
-    solicitudes = q.order_by(Solicitud.created_at.asc()).all()
+    reqs = q.order_by(Solicitud.created_at.asc()).all()
     return [
         {
-            "id": s.id,
-            "ticket": s.ticket,
-            "tipo_tramite": s.tipo_tramite.nombre,
-            "estado": s.estado,
-            "cedula_solicitante": s.cedula_solicitante,
-            "usuario": f"{s.usuario.nombre} {s.usuario.apellido}" if s.usuario else s.cedula_solicitante,
-            "created_at": s.created_at.isoformat(),
-            "operador_id": s.operador_id,
+            "id": r.id,
+            "ticket": r.ticket,
+            "request_type": r.request_type.name,
+            "status": r.status,
+            "applicant_national_id": r.applicant_national_id,
+            "user": f"{r.user.first_name} {r.user.last_name}" if r.user else r.applicant_national_id,
+            "created_at": r.created_at.isoformat(),
+            "operator_id": r.operator_id,
         }
-        for s in solicitudes
+        for r in reqs
     ]
 
 
-# ── Abrir solicitud ───────────────────────────────────────────────────────────
+# ── Open request ──────────────────────────────────────────────────────────────
 
-@router.post("/solicitudes/{id}/abrir")
-def abrir_solicitud(
-    id: int,
-    current_user: Usuario = Depends(require_roles(RolEnum.operador, RolEnum.coordinador)),
-    db: Session = Depends(get_db),
-):
-    s = db.query(Solicitud).filter(Solicitud.id == id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    if s.estado == EstadoEnum.en_atencion and s.operador_id != current_user.id:
-        raise HTTPException(status_code=409, detail="Ya está siendo atendida por otro operador")
-
-    estado_ant = s.estado
-    s.estado = EstadoEnum.en_atencion
-    s.operador_id = current_user.id
-    s.updated_at = datetime.utcnow()
-
-    db.add(HistorialEstado(
-        solicitud_id=s.id,
-        operador_id=current_user.id,
-        estado_anterior=estado_ant,
-        estado_nuevo=EstadoEnum.en_atencion,
-        comentario=f"En atención por {current_user.nombre}",
-        es_interno=True,
-    ))
-    db.commit()
-    return {"detail": "Solicitud en atención"}
-
-
-# ── Liberar solicitud ─────────────────────────────────────────────────────────
-
-@router.post("/solicitudes/{id}/liberar")
-def liberar_solicitud(
+@router.post("/requests/{id}/open")
+def open_request(
     id: int,
     current_user: Usuario = Depends(require_roles(*STAFF_ROLES)),
     db: Session = Depends(get_db),
 ):
-    s = db.query(Solicitud).filter(Solicitud.id == id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    if s.estado != EstadoEnum.en_atencion:
-        return {"detail": "No estaba en atención"}
+    req = db.query(Solicitud).filter(Solicitud.id == id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status == EstadoEnum.in_progress and req.operator_id != current_user.id:
+        raise HTTPException(status_code=409, detail="Already being handled by another operator")
 
-    s.estado = EstadoEnum.pendiente
-    s.operador_id = None
-    s.updated_at = datetime.utcnow()
+    previous = req.status
+    req.status = EstadoEnum.in_progress
+    req.operator_id = current_user.id
+    req.updated_at = datetime.utcnow()
 
     db.add(HistorialEstado(
-        solicitud_id=s.id,
-        operador_id=current_user.id,
-        estado_anterior=EstadoEnum.en_atencion,
-        estado_nuevo=EstadoEnum.pendiente,
-        comentario="Devuelta a pendiente",
-        es_interno=True,
+        request_id=req.id,
+        operator_id=current_user.id,
+        previous_status=previous,
+        new_status=EstadoEnum.in_progress,
+        comment=f"In progress by {req.operator.first_name}",
+        is_internal=True,
     ))
     db.commit()
-    return {"detail": "Solicitud devuelta a pendiente"}
+    return {"detail": "Request is now in progress"}
 
 
-# ── Acción sobre solicitud ────────────────────────────────────────────────────
+# ── Release request ───────────────────────────────────────────────────────────
 
-class AccionBody(BaseModel):
-    accion: str  # aprobar | rechazar | escalar | comentario
-    comentario: str | None = None
-    es_interno: bool = False
+@router.post("/requests/{id}/release")
+def release_request(
+    id: int,
+    current_user: Usuario = Depends(require_roles(*STAFF_ROLES)),
+    db: Session = Depends(get_db),
+):
+    req = db.query(Solicitud).filter(Solicitud.id == id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != EstadoEnum.in_progress:
+        return {"detail": "Request was not in progress"}
+
+    req.status = EstadoEnum.pending
+    req.operator_id = None
+    req.updated_at = datetime.utcnow()
+
+    db.add(HistorialEstado(
+        request_id=req.id,
+        operator_id=current_user.id,
+        previous_status=EstadoEnum.in_progress,
+        new_status=EstadoEnum.pending,
+        comment="Returned to pending",
+        is_internal=True,
+    ))
+    db.commit()
+    return {"detail": "Request returned to pending"}
 
 
-ACCION_ESTADO = {
-    "aprobar": EstadoEnum.aprobada,
-    "rechazar": EstadoEnum.rechazada,
-    "escalar": EstadoEnum.escalada,
+# ── Action on request ─────────────────────────────────────────────────────────
+
+class ActionBody(BaseModel):
+    action: str  # approve | reject | escalate | comment
+    comment: str | None = None
+    is_internal: bool = False
+
+
+ACTION_STATUS = {
+    "approve": EstadoEnum.approved,
+    "reject": EstadoEnum.rejected,
+    "escalate": EstadoEnum.escalated,
 }
 
 
-@router.post("/solicitudes/{id}/accion")
-def accion_solicitud(
+@router.post("/requests/{id}/action")
+def request_action(
     id: int,
-    body: AccionBody,
+    body: ActionBody,
     current_user: Usuario = Depends(require_roles(*STAFF_ROLES)),
     db: Session = Depends(get_db),
 ):
-    s = db.query(Solicitud).filter(Solicitud.id == id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+    req = db.query(Solicitud).filter(Solicitud.id == id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
 
-    if body.accion == "rechazar" and not body.comentario:
-        raise HTTPException(status_code=400, detail="El rechazo requiere un comentario")
+    if body.action == "reject" and not body.comment:
+        raise HTTPException(status_code=400, detail="Rejection requires a comment")
 
-    if body.accion == "comentario":
+    if body.action == "comment":
         db.add(HistorialEstado(
-            solicitud_id=s.id,
-            operador_id=current_user.id,
-            estado_anterior=s.estado,
-            estado_nuevo=s.estado,
-            comentario=body.comentario,
-            es_interno=body.es_interno,
+            request_id=req.id,
+            operator_id=current_user.id,
+            previous_status=req.status,
+            new_status=req.status,
+            comment=body.comment,
+            is_internal=body.is_internal,
         ))
         db.commit()
-        return {"detail": "Comentario agregado"}
+        return {"detail": "Comment added"}
 
-    nuevo_estado = ACCION_ESTADO.get(body.accion)
-    if not nuevo_estado:
-        raise HTTPException(status_code=400, detail=f"Acción desconocida: {body.accion}")
+    new_status = ACTION_STATUS.get(body.action)
+    if not new_status:
+        raise HTTPException(status_code=400, detail=f"Unknown action: {body.action}")
 
-    estado_ant = s.estado
-    s.estado = nuevo_estado
-    s.updated_at = datetime.utcnow()
+    previous = req.status
+    req.status = new_status
+    req.updated_at = datetime.utcnow()
 
     db.add(HistorialEstado(
-        solicitud_id=s.id,
-        operador_id=current_user.id,
-        estado_anterior=estado_ant,
-        estado_nuevo=nuevo_estado,
-        comentario=body.comentario,
-        es_interno=body.es_interno,
+        request_id=req.id,
+        operator_id=current_user.id,
+        previous_status=previous,
+        new_status=new_status,
+        comment=body.comment,
+        is_internal=body.is_internal,
     ))
 
-    if s.usuario_id and not body.es_interno:
-        mensajes = {
-            "aprobar": "Tu solicitud ha sido aprobada.",
-            "rechazar": f"Tu solicitud fue rechazada. Motivo: {body.comentario}",
-            "escalar": "Tu solicitud fue escalada al coordinador para revisión.",
+    if req.user_id and not body.is_internal:
+        messages = {
+            "approve": "Your request has been approved.",
+            "reject": f"Your request was rejected. Reason: {body.comment}",
+            "escalate": "Your request has been escalated to the coordinator for review.",
         }
-        crear_notificacion(db, s.usuario_id, s.id, mensajes.get(body.accion, "Tu solicitud fue actualizada."))
+        create_notification(db, req.user_id, req.id, messages.get(body.action, "Your request was updated."))
 
     db.commit()
-    return {"detail": f"Solicitud {body.accion}da correctamente"}
+    return {"detail": f"Request {body.action}d successfully"}
 
 
-# ── Ver solicitud completa ────────────────────────────────────────────────────
+# ── Get full request ──────────────────────────────────────────────────────────
 
-@router.get("/solicitudes/{id}")
-def ver_solicitud_operador(
+@router.get("/requests/{id}")
+def get_request_operator(
     id: int,
     current_user: Usuario = Depends(require_roles(*STAFF_ROLES)),
     db: Session = Depends(get_db),
 ):
-    s = db.query(Solicitud).filter(Solicitud.id == id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    return _solicitud_full(s)
+    req = db.query(Solicitud).filter(Solicitud.id == id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    return _request_full(req)

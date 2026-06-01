@@ -4,23 +4,23 @@ import client from '../../api/client'
 import AppShell from '../../components/AppShell'
 import './estudiante.css'
 
-function EstadoBadge({ estado }) {
-  return <span className={`badge badge-${estado}`}>{estado.replace('_', ' ')}</span>
+function StatusBadge({ status }) {
+  return <span className={`badge badge-${status}`}>{status.replace('_', ' ')}</span>
 }
 
-function formatFecha(iso) {
+function formatDate(iso) {
   return new Date(iso).toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 export default function Dashboard() {
-  const [solicitudes, setSolicitudes] = useState([])
+  const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    client.get('/solicitudes/mis-solicitudes')
-      .then(r => setSolicitudes(r.data))
-      .catch(() => setError('No se pudieron cargar las solicitudes'))
+    client.get('/requests/my-requests')
+      .then(r => setRequests(r.data))
+      .catch(() => setError('Could not load requests'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -28,45 +28,43 @@ export default function Dashboard() {
     <AppShell>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Mis solicitudes</h1>
-          <p className="page-subtitle">Control de estudios · Taquilla</p>
+          <h1 className="page-title">My requests</h1>
+          <p className="page-subtitle">Records office · Student services</p>
         </div>
-        <Link to="/solicitudes/nueva" className="btn-primary">+ Nueva solicitud</Link>
+        <Link to="/requests/new" className="btn-primary">+ New request</Link>
       </div>
 
       {error && <div className="global-error">{error}</div>}
-      {loading && <p className="loading-msg">Cargando...</p>}
+      {loading && <p className="loading-msg">Loading...</p>}
 
-      {!loading && solicitudes.length === 0 && (
+      {!loading && requests.length === 0 && (
         <div className="empty-state">
-          <p className="empty-state-title">Sin solicitudes</p>
-          <p className="empty-state-sub">No has realizado ningún trámite todavía.</p>
-          <Link to="/solicitudes/nueva" className="btn-primary">Crear primera solicitud</Link>
+          <p className="empty-state-title">No requests</p>
+          <p className="empty-state-sub">You have not submitted any requests yet.</p>
+          <Link to="/requests/new" className="btn-primary">Create first request</Link>
         </div>
       )}
 
-      {!loading && solicitudes.length > 0 && (
+      {!loading && requests.length > 0 && (
         <table className="solicitudes-table">
           <thead>
             <tr>
               <th>Ticket</th>
-              <th>Trámite</th>
-              <th>Estado</th>
-              <th>Fecha</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Date</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {solicitudes.map(s => (
-              <tr key={s.id}>
-                <td><span className="ticket-code">{s.ticket}</span></td>
-                <td>{s.tipo_tramite.nombre}</td>
-                <td><EstadoBadge estado={s.estado} /></td>
-                <td><span className="table-date">{formatFecha(s.created_at)}</span></td>
+            {requests.map(req => (
+              <tr key={req.id}>
+                <td><span className="ticket-code">{req.ticket}</span></td>
+                <td>{req.request_type.name}</td>
+                <td><StatusBadge status={req.status} /></td>
+                <td><span className="table-date">{formatDate(req.created_at)}</span></td>
                 <td>
-                  <Link to={`/solicitudes/${s.ticket}`} className="table-link">
-                    Ver →
-                  </Link>
+                  <Link to={`/requests/${req.ticket}`} className="table-link">View →</Link>
                 </td>
               </tr>
             ))}

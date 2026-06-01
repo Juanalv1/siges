@@ -3,47 +3,53 @@ import { Link, useNavigate } from 'react-router-dom'
 import client from '../../api/client'
 import AuthShell from './AuthShell'
 
-const EMPTY_STEP1 = { cedula: '', nombre: '', apellido: '', correo: '', telefono: '', password: '', confirmar: '' }
-const EMPTY_STEP2 = [{ pregunta_id: '', respuesta: '' }, { pregunta_id: '', respuesta: '' }]
+const EMPTY_STEP1 = {
+  national_id: '', first_name: '', last_name: '',
+  email: '', phone: '', password: '', confirm: '',
+}
+const EMPTY_ANSWERS = [
+  { question_id: '', answer: '' },
+  { question_id: '', answer: '' },
+]
 
 export default function Registro() {
   const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState(EMPTY_STEP1)
-  const [preguntas, setPreguntas] = useState([])
-  const [seguridad, setSeguridad] = useState(EMPTY_STEP2)
+  const [questions, setQuestions] = useState([])
+  const [securityAnswers, setSecurityAnswers] = useState(EMPTY_ANSWERS)
   const [errors, setErrors] = useState({})
   const [globalError, setGlobalError] = useState('')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    client.get('/auth/preguntas-seguridad').then(r => setPreguntas(r.data))
+    client.get('/auth/security-questions').then(r => setQuestions(r.data))
   }, [])
 
   function validateStep1() {
     const e = {}
-    if (!form.cedula.trim()) e.cedula = 'Requerido'
-    if (!form.nombre.trim()) e.nombre = 'Requerido'
-    if (!form.apellido.trim()) e.apellido = 'Requerido'
-    if (!form.correo.trim()) e.correo = 'Requerido'
-    if (form.password.length < 8) e.password = 'Mínimo 8 caracteres'
-    if (form.password !== form.confirmar) e.confirmar = 'Las contraseñas no coinciden'
+    if (!form.national_id.trim()) e.national_id = 'Required'
+    if (!form.first_name.trim()) e.first_name = 'Required'
+    if (!form.last_name.trim()) e.last_name = 'Required'
+    if (!form.email.trim()) e.email = 'Required'
+    if (form.password.length < 8) e.password = 'Minimum 8 characters'
+    if (form.password !== form.confirm) e.confirm = 'Passwords do not match'
     return e
   }
 
   function validateStep2() {
     const e = {}
-    seguridad.forEach((s, i) => {
-      if (!s.pregunta_id) e[`p${i}`] = 'Selecciona una pregunta'
-      if (!s.respuesta.trim()) e[`r${i}`] = 'Requerido'
+    securityAnswers.forEach((s, i) => {
+      if (!s.question_id) e[`q${i}`] = 'Select a question'
+      if (!s.answer.trim()) e[`a${i}`] = 'Required'
     })
-    if (seguridad[0].pregunta_id && seguridad[0].pregunta_id === seguridad[1].pregunta_id) {
-      e.p1 = 'Elige preguntas distintas'
+    if (securityAnswers[0].question_id && securityAnswers[0].question_id === securityAnswers[1].question_id) {
+      e.q1 = 'Choose different questions'
     }
     return e
   }
 
-  function nextStep(e) {
+  function goToStep2(e) {
     e.preventDefault()
     const errs = validateStep1()
     if (Object.keys(errs).length) { setErrors(errs); return }
@@ -60,17 +66,20 @@ export default function Registro() {
     setGlobalError('')
     try {
       await client.post('/auth/register', {
-        cedula: form.cedula,
-        nombre: form.nombre,
-        apellido: form.apellido,
-        correo: form.correo,
-        telefono: form.telefono || undefined,
+        national_id: form.national_id,
+        first_name: form.first_name,
+        last_name: form.last_name,
+        email: form.email,
+        phone: form.phone || undefined,
         password: form.password,
-        preguntas: seguridad.map(s => ({ pregunta_id: Number(s.pregunta_id), respuesta: s.respuesta })),
+        security_questions: securityAnswers.map(s => ({
+          question_id: Number(s.question_id),
+          answer: s.answer,
+        })),
       })
-      navigate('/login', { state: { success: 'Cuenta creada. Ya puedes iniciar sesión.' } })
+      navigate('/login', { state: { success: 'Account created. You can now sign in.' } })
     } catch (err) {
-      setGlobalError(err.response?.data?.detail || 'Error al registrar')
+      setGlobalError(err.response?.data?.detail || 'Registration failed')
     } finally {
       setLoading(false)
     }
@@ -92,9 +101,9 @@ export default function Registro() {
 
   return (
     <AuthShell>
-      <h1 className="auth-form-heading">Crear cuenta</h1>
+      <h1 className="auth-form-heading">Create account</h1>
       <p className="auth-form-subheading">
-        {step === 1 ? 'Datos personales.' : 'Preguntas de seguridad para recuperar tu cuenta.'}
+        {step === 1 ? 'Personal details.' : 'Security questions to recover your account.'}
       </p>
 
       <div className="auth-steps">
@@ -105,19 +114,19 @@ export default function Registro() {
       {globalError && <div className="auth-global-error">{globalError}</div>}
 
       {step === 1 && (
-        <form onSubmit={nextStep}>
-          {field('cedula', 'Cédula', 'text', 'V-00000000')}
+        <form onSubmit={goToStep2}>
+          {field('national_id', 'National ID', 'text', 'V-00000000')}
           <div className="auth-field-row">
-            {field('nombre', 'Nombre', 'text', 'Juan')}
-            {field('apellido', 'Apellido', 'text', 'Pérez')}
+            {field('first_name', 'First name', 'text', 'Juan')}
+            {field('last_name', 'Last name', 'text', 'Pérez')}
           </div>
-          {field('correo', 'Correo', 'email', 'correo@ejemplo.com')}
-          {field('telefono', 'Teléfono (opcional)', 'tel', '0414-0000000')}
-          {field('password', 'Contraseña', 'password', '••••••••')}
-          {field('confirmar', 'Confirmar contraseña', 'password', '••••••••')}
-          <button className="auth-btn" type="submit">Continuar →</button>
+          {field('email', 'Email', 'email', 'user@email.com')}
+          {field('phone', 'Phone (optional)', 'tel', '0414-0000000')}
+          {field('password', 'Password', 'password', '••••••••')}
+          {field('confirm', 'Confirm password', 'password', '••••••••')}
+          <button className="auth-btn" type="submit">Continue →</button>
           <Link className="auth-link" to="/login" style={{ marginTop: '1rem', display: 'block' }}>
-            ← Ya tengo cuenta
+            ← Already have an account
           </Link>
         </form>
       )}
@@ -127,45 +136,45 @@ export default function Registro() {
           {[0, 1].map(i => (
             <div key={i}>
               <div className="auth-field">
-                <label className="auth-label">Pregunta {i + 1}</label>
+                <label className="auth-label">Question {i + 1}</label>
                 <select
-                  className={`auth-input${errors[`p${i}`] ? ' error' : ''}`}
-                  value={seguridad[i].pregunta_id}
+                  className={`auth-input${errors[`q${i}`] ? ' error' : ''}`}
+                  value={securityAnswers[i].question_id}
                   onChange={e => {
-                    const copy = [...seguridad]
-                    copy[i] = { ...copy[i], pregunta_id: e.target.value }
-                    setSeguridad(copy)
+                    const copy = [...securityAnswers]
+                    copy[i] = { ...copy[i], question_id: e.target.value }
+                    setSecurityAnswers(copy)
                   }}
                 >
-                  <option value="">Seleccionar...</option>
-                  {preguntas.map(p => (
-                    <option key={p.id} value={p.id}>{p.pregunta}</option>
+                  <option value="">Select...</option>
+                  {questions.map(q => (
+                    <option key={q.id} value={q.id}>{q.question}</option>
                   ))}
                 </select>
-                {errors[`p${i}`] && <p className="auth-input-error">{errors[`p${i}`]}</p>}
+                {errors[`q${i}`] && <p className="auth-input-error">{errors[`q${i}`]}</p>}
               </div>
               <div className="auth-field">
-                <label className="auth-label">Respuesta</label>
+                <label className="auth-label">Answer</label>
                 <input
-                  className={`auth-input${errors[`r${i}`] ? ' error' : ''}`}
+                  className={`auth-input${errors[`a${i}`] ? ' error' : ''}`}
                   type="text"
-                  value={seguridad[i].respuesta}
+                  value={securityAnswers[i].answer}
                   onChange={e => {
-                    const copy = [...seguridad]
-                    copy[i] = { ...copy[i], respuesta: e.target.value }
-                    setSeguridad(copy)
+                    const copy = [...securityAnswers]
+                    copy[i] = { ...copy[i], answer: e.target.value }
+                    setSecurityAnswers(copy)
                   }}
                 />
-                {errors[`r${i}`] && <p className="auth-input-error">{errors[`r${i}`]}</p>}
+                {errors[`a${i}`] && <p className="auth-input-error">{errors[`a${i}`]}</p>}
               </div>
               {i === 0 && <hr className="auth-divider" />}
             </div>
           ))}
           <button className="auth-btn" type="submit" disabled={loading}>
-            {loading ? 'Creando cuenta...' : 'Crear cuenta →'}
+            {loading ? 'Creating account...' : 'Create account →'}
           </button>
           <button type="button" className="auth-btn-ghost" onClick={() => { setStep(1); setErrors({}) }}>
-            ← Volver
+            ← Back
           </button>
         </form>
       )}

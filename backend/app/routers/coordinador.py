@@ -8,63 +8,63 @@ from app.dependencies import get_db, require_roles
 from app.models.solicitud import EstadoEnum, HistorialEstado, Solicitud
 from app.models.tramite import TipoTramite
 from app.models.usuario import RolEnum, Usuario
-from app.services.notificaciones import crear_notificacion
+from app.services.notificaciones import create_notification
 
-router = APIRouter(prefix="/coordinador", tags=["coordinador"])
+router = APIRouter(prefix="/coordinator", tags=["coordinator"])
 
-COORD = (RolEnum.coordinador,)
+COORD = (RolEnum.coordinator,)
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
-class TipoTramiteCreate(BaseModel):
-    nombre: str
-    descripcion: str | None = None
-    docs_requeridos: list[str] = []
-    dias_limite: int | None = None
-    activo: bool = True
-    requiere_cuenta: bool = True
+class RequestTypeCreate(BaseModel):
+    name: str
+    description: str | None = None
+    required_docs: list[str] = []
+    deadline_days: int | None = None
+    active: bool = True
+    requires_account: bool = True
 
 
-class TipoTramiteUpdate(BaseModel):
-    nombre: str | None = None
-    descripcion: str | None = None
-    docs_requeridos: list[str] | None = None
-    dias_limite: int | None = None
-    activo: bool | None = None
-    requiere_cuenta: bool | None = None
+class RequestTypeUpdate(BaseModel):
+    name: str | None = None
+    description: str | None = None
+    required_docs: list[str] | None = None
+    deadline_days: int | None = None
+    active: bool | None = None
+    requires_account: bool | None = None
 
 
-class ResolverBody(BaseModel):
-    accion: str  # aprobar | rechazar
-    comentario: str
+class ResolveBody(BaseModel):
+    action: str  # approve | reject
+    comment: str
 
 
-# ── Tipos de trámite ──────────────────────────────────────────────────────────
+# ── Request types ─────────────────────────────────────────────────────────────
 
-@router.get("/tipos-tramite")
-def listar_tipos(
+@router.get("/request-types")
+def list_request_types(
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
-    tipos = db.query(TipoTramite).all()
+    types = db.query(TipoTramite).all()
     return [
         {
             "id": t.id,
-            "nombre": t.nombre,
-            "descripcion": t.descripcion,
-            "docs_requeridos": t.docs_requeridos,
-            "dias_limite": t.dias_limite,
-            "activo": t.activo,
-            "requiere_cuenta": t.requiere_cuenta,
+            "name": t.name,
+            "description": t.description,
+            "required_docs": t.required_docs,
+            "deadline_days": t.deadline_days,
+            "active": t.active,
+            "requires_account": t.requires_account,
         }
-        for t in tipos
+        for t in types
     ]
 
 
-@router.post("/tipos-tramite", status_code=status.HTTP_201_CREATED)
-def crear_tipo(
-    body: TipoTramiteCreate,
+@router.post("/request-types", status_code=status.HTTP_201_CREATED)
+def create_request_type(
+    body: RequestTypeCreate,
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
@@ -72,139 +72,139 @@ def crear_tipo(
     db.add(t)
     db.commit()
     db.refresh(t)
-    return {"id": t.id, "nombre": t.nombre}
+    return {"id": t.id, "name": t.name}
 
 
-@router.put("/tipos-tramite/{id}")
-def actualizar_tipo(
+@router.put("/request-types/{id}")
+def update_request_type(
     id: int,
-    body: TipoTramiteUpdate,
+    body: RequestTypeUpdate,
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
     t = db.query(TipoTramite).filter(TipoTramite.id == id).first()
     if not t:
-        raise HTTPException(status_code=404, detail="Tipo de trámite no encontrado")
+        raise HTTPException(status_code=404, detail="Request type not found")
 
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(t, field, value)
 
     db.commit()
     db.refresh(t)
-    return {"id": t.id, "nombre": t.nombre, "activo": t.activo}
+    return {"id": t.id, "name": t.name, "active": t.active}
 
 
-@router.delete("/tipos-tramite/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar_tipo(
+@router.delete("/request-types/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_request_type(
     id: int,
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
     t = db.query(TipoTramite).filter(TipoTramite.id == id).first()
     if not t:
-        raise HTTPException(status_code=404, detail="Tipo de trámite no encontrado")
+        raise HTTPException(status_code=404, detail="Request type not found")
     db.delete(t)
     db.commit()
 
 
-# ── Solicitudes escaladas ─────────────────────────────────────────────────────
+# ── Escalated requests ────────────────────────────────────────────────────────
 
-@router.get("/solicitudes-escaladas")
-def solicitudes_escaladas(
+@router.get("/escalated-requests")
+def escalated_requests(
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
-    solicitudes = db.query(Solicitud).filter(Solicitud.estado == EstadoEnum.escalada).order_by(Solicitud.updated_at.asc()).all()
+    reqs = db.query(Solicitud).filter(Solicitud.status == EstadoEnum.escalated).order_by(Solicitud.updated_at.asc()).all()
     return [
         {
-            "id": s.id,
-            "ticket": s.ticket,
-            "tipo_tramite": s.tipo_tramite.nombre,
-            "usuario": f"{s.usuario.nombre} {s.usuario.apellido}" if s.usuario else s.cedula_solicitante,
-            "estado": s.estado,
-            "created_at": s.created_at.isoformat(),
-            "updated_at": s.updated_at.isoformat(),
+            "id": r.id,
+            "ticket": r.ticket,
+            "request_type": r.request_type.name,
+            "user": f"{r.user.first_name} {r.user.last_name}" if r.user else r.applicant_national_id,
+            "status": r.status,
+            "created_at": r.created_at.isoformat(),
+            "updated_at": r.updated_at.isoformat(),
         }
-        for s in solicitudes
+        for r in reqs
     ]
 
 
-@router.post("/solicitudes/{id}/resolver")
-def resolver_escalada(
+@router.post("/requests/{id}/resolve")
+def resolve_escalated(
     id: int,
-    body: ResolverBody,
+    body: ResolveBody,
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
-    s = db.query(Solicitud).filter(Solicitud.id == id).first()
-    if not s:
-        raise HTTPException(status_code=404, detail="Solicitud no encontrada")
-    if s.estado != EstadoEnum.escalada:
-        raise HTTPException(status_code=400, detail="La solicitud no está escalada")
+    req = db.query(Solicitud).filter(Solicitud.id == id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != EstadoEnum.escalated:
+        raise HTTPException(status_code=400, detail="Request is not escalated")
 
-    mapa = {"aprobar": EstadoEnum.aprobada, "rechazar": EstadoEnum.rechazada}
-    nuevo_estado = mapa.get(body.accion)
-    if not nuevo_estado:
-        raise HTTPException(status_code=400, detail="Acción inválida")
+    status_map = {"approve": EstadoEnum.approved, "reject": EstadoEnum.rejected}
+    new_status = status_map.get(body.action)
+    if not new_status:
+        raise HTTPException(status_code=400, detail="Invalid action")
 
-    estado_ant = s.estado
-    s.estado = nuevo_estado
-    s.updated_at = datetime.utcnow()
+    previous = req.status
+    req.status = new_status
+    req.updated_at = datetime.utcnow()
 
     db.add(HistorialEstado(
-        solicitud_id=s.id,
-        operador_id=current_user.id,
-        estado_anterior=estado_ant,
-        estado_nuevo=nuevo_estado,
-        comentario=body.comentario,
-        es_interno=False,
+        request_id=req.id,
+        operator_id=current_user.id,
+        previous_status=previous,
+        new_status=new_status,
+        comment=body.comment,
+        is_internal=False,
     ))
 
-    if s.usuario_id:
-        msg = {
-            "aprobar": "Tu solicitud escalada fue aprobada por el coordinador.",
-            "rechazar": f"Tu solicitud fue rechazada por el coordinador. Motivo: {body.comentario}",
+    if req.user_id:
+        messages = {
+            "approve": "Your escalated request was approved by the coordinator.",
+            "reject": f"Your request was rejected by the coordinator. Reason: {body.comment}",
         }
-        crear_notificacion(db, s.usuario_id, s.id, msg[body.accion])
+        create_notification(db, req.user_id, req.id, messages[body.action])
 
     db.commit()
-    return {"detail": f"Solicitud {body.accion}da correctamente"}
+    return {"detail": f"Request {body.action}d successfully"}
 
 
-# ── Gestión de usuarios ───────────────────────────────────────────────────────
+# ── User management ───────────────────────────────────────────────────────────
 
-@router.get("/usuarios")
-def listar_usuarios(
+@router.get("/users")
+def list_users(
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
-    usuarios = db.query(Usuario).filter(Usuario.rol.in_([RolEnum.operador, RolEnum.coordinador])).all()
+    users = db.query(Usuario).filter(Usuario.role.in_([RolEnum.operator, RolEnum.coordinator])).all()
     return [
         {
             "id": u.id,
-            "nombre": u.nombre,
-            "apellido": u.apellido,
-            "correo": u.correo,
-            "rol": u.rol,
-            "activo": u.activo,
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+            "email": u.email,
+            "role": u.role,
+            "active": u.active,
             "created_at": u.created_at.isoformat(),
         }
-        for u in usuarios
+        for u in users
     ]
 
 
-@router.post("/usuarios/{id}/toggle-activo")
-def toggle_activo(
+@router.post("/users/{id}/toggle-active")
+def toggle_active(
     id: int,
     current_user: Usuario = Depends(require_roles(*COORD)),
     db: Session = Depends(get_db),
 ):
-    u = db.query(Usuario).filter(Usuario.id == id).first()
-    if not u:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if u.rol not in (RolEnum.operador, RolEnum.coordinador):
-        raise HTTPException(status_code=400, detail="Solo se pueden gestionar operadores y coordinadores")
+    user = db.query(Usuario).filter(Usuario.id == id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role not in (RolEnum.operator, RolEnum.coordinator):
+        raise HTTPException(status_code=400, detail="Can only manage operators and coordinators")
 
-    u.activo = not u.activo
+    user.active = not user.active
     db.commit()
-    return {"id": u.id, "activo": u.activo}
+    return {"id": user.id, "active": user.active}

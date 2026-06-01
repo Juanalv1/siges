@@ -10,12 +10,12 @@ class Documento(Base):
     __tablename__ = "documentos"
 
     id = Column(Integer, primary_key=True, index=True)
-    solicitud_id = Column(Integer, ForeignKey("solicitudes.id"), nullable=True)
-    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
-    nombre_archivo = Column(String, nullable=False)
-    ruta = Column(String, nullable=False)
-    tipo_mime = Column(String, nullable=True)
-    subido_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    request_id = Column(Integer, ForeignKey("solicitudes.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    filename = Column(String, nullable=False)
+    path = Column(String, nullable=False)
+    mime_type = Column(String, nullable=True)
+    uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    solicitud = relationship("Solicitud", back_populates="documentos")
-    usuario = relationship("Usuario", back_populates="documentos")
+    request = relationship("Solicitud", back_populates="documents")
+    user = relationship("Usuario", back_populates="documents")

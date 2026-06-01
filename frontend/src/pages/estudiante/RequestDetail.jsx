@@ -4,11 +4,11 @@ import client from '../../api/client'
 import AppShell from '../../components/AppShell'
 import './estudiante.css'
 
-function EstadoBadge({ estado }) {
-  return <span className={`badge badge-${estado}`}>{estado.replace('_', ' ')}</span>
+function StatusBadge({ status }) {
+  return <span className={`badge badge-${status}`}>{status.replace('_', ' ')}</span>
 }
 
-function formatFecha(iso) {
+function formatDate(iso) {
   return new Date(iso).toLocaleString('es-VE', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   })
@@ -17,77 +17,77 @@ function formatFecha(iso) {
 export default function DetalleSolicitud() {
   const { ticket } = useParams()
   const location = useLocation()
-  const [solicitud, setSolicitud] = useState(null)
+  const [request, setRequest] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    client.get(`/solicitudes/${ticket}`)
-      .then(r => setSolicitud(r.data))
-      .catch(() => setError('Solicitud no encontrada'))
+    client.get(`/requests/${ticket}`)
+      .then(r => setRequest(r.data))
+      .catch(() => setError('Request not found'))
       .finally(() => setLoading(false))
   }, [ticket])
 
-  if (loading) return <AppShell><p className="loading-msg">Cargando solicitud...</p></AppShell>
+  if (loading) return <AppShell><p className="loading-msg">Loading request...</p></AppShell>
   if (error) return <AppShell><div className="global-error">{error}</div></AppShell>
 
   return (
     <AppShell>
       <div className="page-header">
         <div>
-          <h1 className="page-title">{solicitud.tipo_tramite.nombre}</h1>
-          <p className="page-subtitle">Seguimiento de solicitud</p>
+          <h1 className="page-title">{request.request_type.name}</h1>
+          <p className="page-subtitle">Request tracking</p>
         </div>
-        <Link to="/solicitudes" className="btn-ghost">← Mis solicitudes</Link>
+        <Link to="/requests" className="btn-ghost">← My requests</Link>
       </div>
 
-      {location.state?.nuevo && (
+      {location.state?.isNew && (
         <div style={{ background: 'var(--gray-100)', borderLeft: '3px solid var(--black)', padding: '0.75rem 1rem', marginBottom: '1.5rem', fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem' }}>
-          Solicitud enviada correctamente. Tu número de ticket es <strong>{location.state.ticket}</strong>.
+          Request submitted successfully. Your ticket number is <strong>{location.state.ticket}</strong>.
         </div>
       )}
 
       <div className="solicitud-detail-grid">
         <div>
           <div className="detail-section">
-            <p className="detail-section-title">Información</p>
+            <p className="detail-section-title">Details</p>
             <div className="detail-meta">
               <div className="detail-meta-row">
-                <span className="detail-meta-key">Estado</span>
-                <EstadoBadge estado={solicitud.estado} />
+                <span className="detail-meta-key">Status</span>
+                <StatusBadge status={request.status} />
               </div>
               <div className="detail-meta-row">
-                <span className="detail-meta-key">Fecha de envío</span>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem' }}>{formatFecha(solicitud.created_at)}</span>
+                <span className="detail-meta-key">Submitted</span>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem' }}>{formatDate(request.created_at)}</span>
               </div>
               <div className="detail-meta-row">
-                <span className="detail-meta-key">Última actualización</span>
-                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem' }}>{formatFecha(solicitud.updated_at)}</span>
+                <span className="detail-meta-key">Last update</span>
+                <span style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.78rem' }}>{formatDate(request.updated_at)}</span>
               </div>
-              {solicitud.descripcion && (
+              {request.description && (
                 <div style={{ paddingTop: '0.5rem', borderTop: '1px solid var(--gray-200)' }}>
                   <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.88rem', color: 'var(--gray-600)', lineHeight: 1.6 }}>
-                    {solicitud.descripcion}
+                    {request.description}
                   </p>
                 </div>
               )}
             </div>
           </div>
 
-          {solicitud.documentos.length > 0 && (
+          {request.documents.length > 0 && (
             <div className="detail-section">
-              <p className="detail-section-title">Documentos</p>
+              <p className="detail-section-title">Documents</p>
               <div className="doc-list">
-                {solicitud.documentos.map(d => (
+                {request.documents.map(d => (
                   <div key={d.id} className="doc-item">
-                    <span className="doc-item-name">{d.nombre_archivo}</span>
+                    <span className="doc-item-name">{d.filename}</span>
                     <a
                       href={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}${d.url}`}
                       target="_blank"
                       rel="noreferrer"
                       style={{ fontFamily: 'DM Mono, monospace', fontSize: '0.62rem', color: 'var(--black)', letterSpacing: '0.1em', textTransform: 'uppercase' }}
                     >
-                      Descargar →
+                      Download →
                     </a>
                   </div>
                 ))}
@@ -96,22 +96,22 @@ export default function DetalleSolicitud() {
           )}
 
           <div className="detail-section">
-            <p className="detail-section-title">Historial</p>
-            {solicitud.historial.length === 0 ? (
-              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: 'var(--gray-400)' }}>Sin actualizaciones aún.</p>
+            <p className="detail-section-title">History</p>
+            {request.history.length === 0 ? (
+              <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.85rem', color: 'var(--gray-400)' }}>No updates yet.</p>
             ) : (
               <div className="historial-list">
-                {solicitud.historial.map((h, i) => (
+                {request.history.map((h, i) => (
                   <div key={i} className="historial-item">
-                    <span className="historial-date">{formatFecha(h.fecha)}</span>
-                    <div className="historial-body">
+                    <span className="historial-date">{formatDate(h.date)}</span>
+                    <div>
                       <p className="historial-estados">
-                        {h.estado_anterior
-                          ? <>{h.estado_anterior.replace('_', ' ')}<span className="historial-arrow">→</span>{h.estado_nuevo.replace('_', ' ')}</>
-                          : h.estado_nuevo.replace('_', ' ')
+                        {h.previous_status
+                          ? <>{h.previous_status.replace('_', ' ')}<span className="historial-arrow">→</span>{h.new_status.replace('_', ' ')}</>
+                          : h.new_status.replace('_', ' ')
                         }
                       </p>
-                      {h.comentario && <p className="historial-comment">{h.comentario}</p>}
+                      {h.comment && <p className="historial-comment">{h.comment}</p>}
                     </div>
                   </div>
                 ))}
@@ -122,11 +122,11 @@ export default function DetalleSolicitud() {
 
         <div>
           <div className="ticket-hero">
-            <p className="ticket-hero-label">Número de ticket</p>
-            <p className="ticket-hero-code">{solicitud.ticket}</p>
+            <p className="ticket-hero-label">Ticket number</p>
+            <p className="ticket-hero-code">{request.ticket}</p>
           </div>
           <p style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '0.78rem', color: 'var(--gray-400)', lineHeight: 1.6 }}>
-            Guarda este número para hacer seguimiento de tu solicitud en la taquilla.
+            Keep this number to track your request at the records office.
           </p>
         </div>
       </div>

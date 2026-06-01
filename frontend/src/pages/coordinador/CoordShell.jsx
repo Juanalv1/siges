@@ -18,28 +18,28 @@ export default function CoordShell({ children }) {
           Si<span style={{ color: 'var(--red)' }}>GES</span>
         </span>
         <div className="topbar-right">
-          {user && <span className="topbar-user">{user.nombre} · coordinador</span>}
-          <button className="topbar-logout" onClick={handleLogout}>Salir</button>
+          {user && <span className="topbar-user">{user.name} · coordinator</span>}
+          <button className="topbar-logout" onClick={handleLogout}>Sign out</button>
         </div>
       </header>
       <div className="coord-body">
         <nav className="coord-sidenav">
           <div className="coord-nav-section">
-            <span className="coord-nav-label">Panel</span>
-            <NavLink to="/coordinador" end className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
-              Resumen
+            <span className="coord-nav-label">Dashboard</span>
+            <NavLink to="/coordinator" end className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
+              Overview
             </NavLink>
           </div>
           <div className="coord-nav-section">
-            <span className="coord-nav-label">Gestión</span>
-            <NavLink to="/coordinador/tramites" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
-              Tipos de trámite
+            <span className="coord-nav-label">Management</span>
+            <NavLink to="/coordinator/request-types" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
+              Request types
             </NavLink>
-            <NavLink to="/coordinador/escaladas" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
-              Solicitudes escaladas
+            <NavLink to="/coordinator/escalated" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
+              Escalated requests
             </NavLink>
-            <NavLink to="/coordinador/usuarios" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
-              Operadores
+            <NavLink to="/coordinator/users" className={({ isActive }) => `coord-nav-link${isActive ? ' active' : ''}`}>
+              Operators
             </NavLink>
           </div>
         </nav>

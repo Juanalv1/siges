@@ -4,18 +4,18 @@ import client from '../../api/client'
 import { useAuth } from '../../context/AuthContext'
 import AuthShell from './AuthShell'
 
+const ROLE_REDIRECT = {
+  student: '/requests',
+  operator: '/operator',
+  coordinator: '/coordinator',
+}
+
 export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ correo: '', password: '' })
+  const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  const ROL_REDIRECT = {
-    estudiante: '/solicitudes',
-    operador: '/operador',
-    coordinador: '/coordinador',
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -25,9 +25,9 @@ export default function Login() {
       const { data } = await client.post('/auth/login', form)
       login(data.access_token)
       const payload = JSON.parse(atob(data.access_token.split('.')[1]))
-      navigate(ROL_REDIRECT[payload.rol] || '/solicitudes')
+      navigate(ROLE_REDIRECT[payload.role] || '/requests')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Error al iniciar sesión')
+      setError(err.response?.data?.detail || 'Login failed')
     } finally {
       setLoading(false)
     }
@@ -35,26 +35,26 @@ export default function Login() {
 
   return (
     <AuthShell>
-      <h1 className="auth-form-heading">Ingresar</h1>
-      <p className="auth-form-subheading">Accede con tu correo institucional.</p>
+      <h1 className="auth-form-heading">Sign in</h1>
+      <p className="auth-form-subheading">Access with your institutional email.</p>
 
       {error && <div className="auth-global-error">{error}</div>}
 
       <form onSubmit={handleSubmit}>
         <div className="auth-field">
-          <label className="auth-label">Correo</label>
+          <label className="auth-label">Email</label>
           <input
             className="auth-input"
             type="email"
-            placeholder="usuario@correo.com"
-            value={form.correo}
-            onChange={e => setForm(f => ({ ...f, correo: e.target.value }))}
+            placeholder="user@email.com"
+            value={form.email}
+            onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
             required
           />
         </div>
 
         <div className="auth-field">
-          <label className="auth-label">Contraseña</label>
+          <label className="auth-label">Password</label>
           <input
             className="auth-input"
             type="password"
@@ -66,19 +66,19 @@ export default function Login() {
         </div>
 
         <button className="auth-btn" type="submit" disabled={loading}>
-          {loading ? 'Verificando...' : 'Entrar →'}
+          {loading ? 'Verifying...' : 'Sign in →'}
         </button>
       </form>
 
       <div className="auth-links">
-        <Link className="auth-link" to="/recuperar">
-          ¿Olvidaste tu contraseña? <span className="auth-link-accent">Recupérala</span>
+        <Link className="auth-link" to="/recover">
+          Forgot your password? <span className="auth-link-accent">Recover it</span>
         </Link>
-        <Link className="auth-link" to="/registro">
-          ¿No tienes cuenta? <span className="auth-link-accent">Regístrate</span>
+        <Link className="auth-link" to="/register">
+          No account? <span className="auth-link-accent">Register</span>
         </Link>
-        <Link className="auth-link" to="/inscripcion">
-          Solicitud de inscripción <span className="auth-link-accent">sin cuenta</span>
+        <Link className="auth-link" to="/enrollment">
+          Enrollment request <span className="auth-link-accent">without account</span>
         </Link>
       </div>
     </AuthShell>

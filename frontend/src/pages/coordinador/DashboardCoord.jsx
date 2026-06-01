@@ -5,20 +5,16 @@ import CoordShell from './CoordShell'
 import '../estudiante/estudiante.css'
 
 export default function DashboardCoord() {
-  const [stats, setStats] = useState({ pendiente: 0, en_atencion: 0, escalada: 0 })
+  const [stats, setStats] = useState({ pending: 0, in_progress: 0, escalated: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
-      client.get('/operador/bandeja?estado=pendiente'),
-      client.get('/operador/bandeja?estado=en_atencion'),
-      client.get('/coordinador/solicitudes-escaladas'),
-    ]).then(([pend, aten, esc]) => {
-      setStats({
-        pendiente: pend.data.length,
-        en_atencion: aten.data.length,
-        escalada: esc.data.length,
-      })
+      client.get('/operator/inbox?status=pending'),
+      client.get('/operator/inbox?status=in_progress'),
+      client.get('/coordinator/escalated-requests'),
+    ]).then(([pend, inProg, esc]) => {
+      setStats({ pending: pend.data.length, in_progress: inProg.data.length, escalated: esc.data.length })
     }).finally(() => setLoading(false))
   }, [])
 
@@ -26,32 +22,32 @@ export default function DashboardCoord() {
     <CoordShell>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Resumen</h1>
-          <p className="page-subtitle">Estado actual del sistema</p>
+          <h1 className="page-title">Overview</h1>
+          <p className="page-subtitle">Current system status</p>
         </div>
       </div>
 
-      {loading ? <p className="loading-msg">Cargando...</p> : (
+      {loading ? <p className="loading-msg">Loading...</p> : (
         <div className="stats-grid">
           <div className="stat-card">
-            <p className="stat-value">{stats.pendiente}</p>
-            <p className="stat-label">Pendientes</p>
+            <p className="stat-value">{stats.pending}</p>
+            <p className="stat-label">Pending</p>
           </div>
           <div className="stat-card">
-            <p className="stat-value">{stats.en_atencion}</p>
-            <p className="stat-label">En atención</p>
+            <p className="stat-value">{stats.in_progress}</p>
+            <p className="stat-label">In progress</p>
           </div>
-          <div className={`stat-card${stats.escalada > 0 ? '' : ''}`}>
-            <p className={`stat-value${stats.escalada > 0 ? ' red' : ''}`}>{stats.escalada}</p>
-            <p className="stat-label">Escaladas</p>
+          <div className="stat-card">
+            <p className={`stat-value${stats.escalated > 0 ? ' red' : ''}`}>{stats.escalated}</p>
+            <p className="stat-label">Escalated</p>
           </div>
         </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: 380 }}>
-        <Link to="/coordinador/tramites" className="btn-primary">Gestionar tipos de trámite →</Link>
-        <Link to="/coordinador/escaladas" className="btn-ghost">Ver solicitudes escaladas →</Link>
-        <Link to="/coordinador/usuarios" className="btn-ghost">Gestionar operadores →</Link>
+        <Link to="/coordinator/request-types" className="btn-primary">Manage request types →</Link>
+        <Link to="/coordinator/escalated" className="btn-ghost">View escalated requests →</Link>
+        <Link to="/coordinator/users" className="btn-ghost">Manage operators →</Link>
       </div>
     </CoordShell>
   )

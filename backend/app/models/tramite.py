@@ -8,11 +8,11 @@ class TipoTramite(Base):
     __tablename__ = "tipos_tramite"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String, nullable=False)
-    descripcion = Column(String, nullable=True)
-    docs_requeridos = Column(JSON, default=list, nullable=False)
-    dias_limite = Column(Integer, nullable=True)
-    activo = Column(Boolean, default=True, nullable=False)
-    requiere_cuenta = Column(Boolean, default=True, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    required_docs = Column(JSON, default=list, nullable=False)
+    deadline_days = Column(Integer, nullable=True)
+    active = Column(Boolean, default=True, nullable=False)
+    requires_account = Column(Boolean, default=True, nullable=False)
 
-    solicitudes = relationship("Solicitud", back_populates="tipo_tramite")
+    requests = relationship("Solicitud", back_populates="request_type")

@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from app.models.notificacion import Notificacion
 
 
-def crear_notificacion(db: Session, usuario_id: int, solicitud_id: int, mensaje: str) -> Notificacion:
-    notif = Notificacion(usuario_id=usuario_id, solicitud_id=solicitud_id, mensaje=mensaje)
+def create_notification(db: Session, user_id: int, request_id: int, message: str) -> Notificacion:
+    notif = Notificacion(user_id=user_id, request_id=request_id, message=message)
     db.add(notif)
     db.flush()
     return notif

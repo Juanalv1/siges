@@ -3,21 +3,21 @@ import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 
 import Login from './pages/auth/Login'
-import Registro from './pages/auth/Registro'
-import Recuperar from './pages/auth/Recuperar'
-import Inscripcion from './pages/Inscripcion'
+import Register from './pages/auth/Registro'
+import Recover from './pages/auth/Recuperar'
+import Enrollment from './pages/Inscripcion'
 
 import Dashboard from './pages/estudiante/Dashboard'
-import NuevaSolicitud from './pages/estudiante/NuevaSolicitud'
-import DetalleSolicitud from './pages/estudiante/DetalleSolicitud'
+import NewRequest from './pages/estudiante/NewRequest'
+import RequestDetail from './pages/estudiante/RequestDetail'
 
-import Bandeja from './pages/operador/Bandeja'
-import DetalleSolicitudOp from './pages/operador/DetalleSolicitudOp'
+import Inbox from './pages/operador/Inbox'
+import RequestDetailOp from './pages/operador/RequestDetail'
 
-import DashboardCoord from './pages/coordinador/DashboardCoord'
-import TiposTramite from './pages/coordinador/TiposTramite'
-import SolicitudesEscaladas from './pages/coordinador/SolicitudesEscaladas'
-import Usuarios from './pages/coordinador/Usuarios'
+import CoordinatorDashboard from './pages/coordinador/DashboardCoord'
+import RequestTypes from './pages/coordinador/RequestTypes'
+import EscalatedRequests from './pages/coordinador/EscalatedRequests'
+import Users from './pages/coordinador/Users'
 
 export default function App() {
   return (
@@ -26,43 +26,43 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Público */}
+          {/* Public */}
           <Route path="/login" element={<Login />} />
-          <Route path="/registro" element={<Registro />} />
-          <Route path="/recuperar" element={<Recuperar />} />
-          <Route path="/inscripcion" element={<Inscripcion />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/recover" element={<Recover />} />
+          <Route path="/enrollment" element={<Enrollment />} />
 
-          {/* Estudiante */}
-          <Route path="/solicitudes" element={
-            <ProtectedRoute roles={['estudiante']}><Dashboard /></ProtectedRoute>
+          {/* Student */}
+          <Route path="/requests" element={
+            <ProtectedRoute roles={['student']}><Dashboard /></ProtectedRoute>
           } />
-          <Route path="/solicitudes/nueva" element={
-            <ProtectedRoute roles={['estudiante']}><NuevaSolicitud /></ProtectedRoute>
+          <Route path="/requests/new" element={
+            <ProtectedRoute roles={['student']}><NewRequest /></ProtectedRoute>
           } />
-          <Route path="/solicitudes/:ticket" element={
-            <ProtectedRoute roles={['estudiante', 'operador', 'coordinador']}><DetalleSolicitud /></ProtectedRoute>
-          } />
-
-          {/* Operador */}
-          <Route path="/operador" element={
-            <ProtectedRoute roles={['operador', 'coordinador']}><Bandeja /></ProtectedRoute>
-          } />
-          <Route path="/operador/solicitudes/:id" element={
-            <ProtectedRoute roles={['operador', 'coordinador']}><DetalleSolicitudOp /></ProtectedRoute>
+          <Route path="/requests/:ticket" element={
+            <ProtectedRoute roles={['student', 'operator', 'coordinator']}><RequestDetail /></ProtectedRoute>
           } />
 
-          {/* Coordinador */}
-          <Route path="/coordinador" element={
-            <ProtectedRoute roles={['coordinador']}><DashboardCoord /></ProtectedRoute>
+          {/* Operator */}
+          <Route path="/operator" element={
+            <ProtectedRoute roles={['operator', 'coordinator']}><Inbox /></ProtectedRoute>
           } />
-          <Route path="/coordinador/tramites" element={
-            <ProtectedRoute roles={['coordinador']}><TiposTramite /></ProtectedRoute>
+          <Route path="/operator/requests/:id" element={
+            <ProtectedRoute roles={['operator', 'coordinator']}><RequestDetailOp /></ProtectedRoute>
           } />
-          <Route path="/coordinador/escaladas" element={
-            <ProtectedRoute roles={['coordinador']}><SolicitudesEscaladas /></ProtectedRoute>
+
+          {/* Coordinator */}
+          <Route path="/coordinator" element={
+            <ProtectedRoute roles={['coordinator']}><CoordinatorDashboard /></ProtectedRoute>
           } />
-          <Route path="/coordinador/usuarios" element={
-            <ProtectedRoute roles={['coordinador']}><Usuarios /></ProtectedRoute>
+          <Route path="/coordinator/request-types" element={
+            <ProtectedRoute roles={['coordinator']}><RequestTypes /></ProtectedRoute>
+          } />
+          <Route path="/coordinator/escalated" element={
+            <ProtectedRoute roles={['coordinator']}><EscalatedRequests /></ProtectedRoute>
+          } />
+          <Route path="/coordinator/users" element={
+            <ProtectedRoute roles={['coordinator']}><Users /></ProtectedRoute>
           } />
         </Routes>
       </AuthProvider>
